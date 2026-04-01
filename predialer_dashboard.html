@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>总部DCC系统</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 13px; color: #333; background: #f5f6fa; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  /* ── 顶部浏览器工具栏 ── */
+  .browser-bar {
+    height: 38px; background: #f0f0f0; border-bottom: 1px solid #ddd;
+    display: flex; align-items: center; padding: 0 12px; gap: 10px;
+  }
+  .browser-bar .btn-group { display: flex; gap: 6px; }
+  .browser-bar .nav-btn { width: 24px; height: 24px; border-radius: 50%; border: none; background: #ddd; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; color: #666; }
+  .browser-bar .nav-btn:hover { background: #c8c8c8; }
+  .browser-bar .url-bar { flex: 1; height: 26px; border: 1px solid #ccc; border-radius: 13px; background: #fff; padding: 0 12px; font-size: 12px; color: #555; display: flex; align-items: center; }
+  .browser-bar .title-center { position: absolute; left: 50%; transform: translateX(-50%); font-size: 13px; color: #333; font-weight: 500; }
+  .browser-bar .more-btn { margin-left: auto; font-size: 16px; color: #666; cursor: pointer; letter-spacing: 2px; }
+
+  /* ── 系统顶栏 ── */
+  .sys-header {
+    height: 46px; background: linear-gradient(90deg, #1677ff 0%, #1677ff 100%);
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .sys-header .sys-title { color: #fff; font-size: 15px; font-weight: 600; letter-spacing: 1px; }
+  .sys-header .user-info { position: absolute; right: 16px; color: rgba(255,255,255,0.9); font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+  .sys-header .user-info::after { content: '▾'; font-size: 10px; }
+
+  /* ── 主体布局 ── */
+  .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── 左侧导航 ── */
+  .sidebar {
+    width: 120px; background: #fff; border-right: 1px solid #e8e8e8;
+    display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto;
+  }
+  .sidebar::-webkit-scrollbar { width: 0; }
+  .nav-item {
+    padding: 12px 16px; font-size: 13px; color: #333; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: background .15s; border-bottom: 1px solid #f2f2f2;
+    user-select: none;
+  }
+  .nav-item:hover { background: #f5f8ff; }
+  .nav-item.active { color: #1677ff; font-weight: 500; }
+  .nav-item .arrow { font-size: 11px; color: #999; transition: transform .2s; }
+  .nav-item .arrow.open { transform: rotate(180deg); }
+  .nav-group { overflow: hidden; }
+  .nav-sub { background: #fafafa; }
+  .nav-sub .nav-item {
+    padding: 10px 16px 10px 24px; font-size: 12px; color: #555;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .nav-sub .nav-item.active { color: #1677ff; background: #e8f1ff; font-weight: 500; border-right: 2px solid #1677ff; }
+  .nav-sub .nav-item:hover { background: #eef4ff; }
+  .sidebar-collapse-btn {
+    position: absolute; left: 108px; top: 50%; transform: translateY(-50%);
+    width: 12px; height: 36px; background: #e8e8e8; border-radius: 0 4px 4px 0;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    z-index: 10; font-size: 10px; color: #999;
+  }
+
+  /* ── 右侧内容区 ── */
+  .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
+
+  /* ── 页面顶部标题带 ── */
+  .page-header {
+    height: 46px; background: linear-gradient(90deg, #1677ff 0%, #1e88ff 100%);
+    display: flex; align-items: center; padding: 0 20px; color: #fff;
+    font-size: 15px; font-weight: 600; flex-shrink: 0;
+  }
+
+  /* ── Tab 导航栏 ── */
+  .tab-bar {
+    height: 44px; background: #fff; border-bottom: 1px solid #e8e8e8;
+    display: flex; align-items: flex-end; padding: 0 20px; gap: 0; flex-shrink: 0;
+    overflow-x: auto;
+  }
+  .tab-bar::-webkit-scrollbar { height: 0; }
+  .tab-item {
+    padding: 0 16px; height: 36px; display: flex; align-items: center;
+    font-size: 13px; color: #666; cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color .15s;
+  }
+  .tab-item:hover { color: #1677ff; }
+  .tab-item.active { color: #1677ff; border-bottom-color: #1677ff; font-weight: 500; }
+
+  /* ── 内容主体 ── */
+  .page-body { flex: 1; overflow-y: auto; padding: 0; }
+  .page-body::-webkit-scrollbar { width: 6px; }
+  .page-body::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
+
+  /* ── Tab内容面板 ── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── 搜索筛选栏 ── */
+  .filter-bar {
+    padding: 14px 20px 10px; background: #fff; border-bottom: 1px solid #f0f0f0;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  }
+  .filter-item { display: flex; align-items: center; gap: 6px; }
+  .filter-label { font-size: 12px; color: #333; white-space: nowrap; }
+  .filter-label.required::before { content: '*'; color: #ff4d4f; margin-right: 2px; }
+  .filter-input, .filter-select {
+    height: 30px; border: 1px solid #d9d9d9; border-radius: 4px; padding: 0 8px;
+    font-size: 12px; outline: none; color: #333; background: #fff;
+  }
+  .filter-input:focus, .filter-select:focus { border-color: #1677ff; }
+  .filter-input { width: 130px; }
+  .filter-input.wide { width: 180px; }
+  .filter-input.date { width: 110px; }
+  .filter-range { display: flex; align-items: center; gap: 6px; }
+  .filter-range span { color: #999; font-size: 12px; }
+  .filter-select { width: 120px; }
+  .filter-select.wide { width: 150px; }
+  .btn-group-right { margin-left: auto; display: flex; gap: 8px; }
+  .btn { height: 30px; padding: 0 14px; border-radius: 4px; font-size: 12px; cursor: pointer; border: none; outline: none; transition: all .15s; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-default { background: #fff; border: 1px solid #d9d9d9; color: #333; }
+  .btn-default:hover { border-color: #1677ff; color: #1677ff; }
+  .btn-primary { background: #1677ff; color: #fff; }
+  .btn-primary:hover { background: #4096ff; }
+  .btn-success { background: #52c41a; color: #fff; }
+  .btn-success:hover { background: #73d13d; }
+  .btn-info { background: #1677ff; color: #fff; opacity: 0.9; }
+  .expand-btn { color: #1677ff; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 2px; background: none; border: none; }
+
+  /* ── 数据表格 ── */
+  .table-wrap { padding: 12px 20px; overflow-x: auto; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th {
+    background: #fafafa; padding: 10px 12px; text-align: center;
+    border-bottom: 1px solid #e8e8e8; color: #555; font-weight: 500;
+    white-space: nowrap; position: sticky; top: 0; z-index: 1;
+  }
+  .data-table td {
+    padding: 10px 12px; text-align: center; border-bottom: 1px solid #f0f0f0;
+    color: #333; white-space: nowrap;
+  }
+  .data-table tr:hover td { background: #fafcff; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .tag-blue { background: #e6f4ff; color: #1677ff; }
+  .tag-green { background: #f6ffed; color: #52c41a; }
+  .tag-orange { background: #fff7e6; color: #fa8c16; }
+  .tag-red { background: #fff1f0; color: #ff4d4f; }
+  .tag-gray { background: #f5f5f5; color: #999; }
+  .tag-warn { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+  .tag-danger { background: #fff1f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+
+  /* ── Toast提示组件 ── */
+  .toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .toast {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    padding: 14px 16px;
+    max-width: 320px;
+    animation: toastSlideIn 0.3s ease;
+    border-left: 4px solid #1677ff;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .toast-info { border-left-color: #1677ff; }
+  .toast-success { border-left-color: #52c41a; }
+  .toast-warning { border-left-color: #fa8c16; }
+  .toast-error { border-left-color: #ff4d4f; }
+  
+  /* Toast图标 */
+  .toast-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+  .toast-info .toast-icon { 
+    background: #e8f4ff; 
+  }
+  .toast-success .toast-icon { 
+    background: #f0fae6;
+  }
+  .toast-warning .toast-icon { 
+    background: #fff8ef;
+  }
+  .toast-error .toast-icon { 
+    background: #fff1f1;
+  }
+  .toast-icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+  
+  .toast-content-wrapper {
+    flex: 1;
+    min-width: 0;
+  }
+  .toast-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .toast-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+  }
+  .toast-close {
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .toast-close:hover {
+    background: #f5f5f5;
+    color: #666;
+  }
+  .toast-content {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.5;
+  }
+  .toast-formula {
+    font-family: 'Courier New', monospace;
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 8px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #333;
+    border: 1px solid #e8e8e8;
+  }
+  @keyframes toastSlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  /* 点击提示样式 */
+  .with-tooltip {
+    cursor: help;
+    position: relative;
+  }
+  .with-tooltip:hover {
+    text-decoration: underline dotted;
+  }
+
+  /* ── 空数据 ── */
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0; color: #bbb; }
+  .empty-icon { width: 64px; height: 64px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-text { font-size: 13px; }
+
+  /* ── KPI 卡片 ── */
+  .kpi-section { padding: 16px 20px 8px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px; }
+  .kpi-card {
+    background: #fff; border: 1px solid #e8e8e8; border-radius: 6px;
+    padding: 14px 16px; position: relative; overflow: hidden;
+  }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .kpi-card.c1::before { background: #1677ff; }
+  .kpi-card.c2::before { background: #52c41a; }
+  .kpi-card.c3::before { background: #fa8c16; }
+  .kpi-card.c4::before { background: #13c2c2; }
+  .kpi-card.c5::before { background: #722ed1; }
+  .kpi-card.c6::before { background: #eb2f96; }
+  .kpi-title { font-size: 11px; color: #888; margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 700; color: #1a1a1a; line-height: 1.2; }
+  .kpi-meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 11px; color: #999; }
+  .kpi-rate { color: #52c41a; font-weight: 500; }
+  .kpi-rate.down { color: #ff4d4f; }
+  .trend-up::before { content: '↑'; color: #52c41a; }
+  .trend-down::before { content: '↓'; color: #ff4d4f; }
+
+  /* ── 图表区 ── */
+  .chart-section { padding: 0 20px 16px; display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+  .chart-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 6px; padding: 14px; }
+  .chart-title { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .chart-title .sub { font-size: 11px; color: #999; font-weight: 400; }
+
+  /* ── SVG 折线图 ── */
+  .chart-svg { width: 100%; }
+
+  /* ── 漏斗图 ── */
+  .funnel-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0; }
+  .funnel-step { display: flex; align-items: center; width: 100%; gap: 10px; }
+  .funnel-bar-wrap { flex: 1; display: flex; align-items: center; justify-content: center; }
+  .funnel-bar {
+    height: 32px; border-radius: 3px; display: flex; align-items: center;
+    justify-content: center; color: #fff; font-size: 11px; font-weight: 500;
+    transition: opacity .2s; cursor: default;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%);
+    padding: 0 18px;
+  }
+  .funnel-bar:first-child { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); }
+  .funnel-label { width: 80px; font-size: 11px; color: #555; text-align: right; white-space: nowrap; }
+  .funnel-val { width: 80px; font-size: 11px; color: #1677ff; font-weight: 600; }
+  .funnel-rate { width: 50px; font-size: 10px; color: #999; }
+  .funnel-arrow { text-align: center; font-size: 12px; color: #ccc; margin: 1px 0; }
+
+  /* ── 多维分析Tab内 ── */
+  .analysis-grid { padding: 0 20px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .analysis-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 6px; padding: 14px; }
+
+  /* ── 热力图 ── */
+  .heatmap-grid { display: grid; grid-template-columns: 30px repeat(24, 1fr); gap: 2px; font-size: 10px; }
+  .heatmap-cell { height: 20px; border-radius: 2px; display: flex; align-items: center; justify-content: center; }
+  .heatmap-label { color: #999; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; }
+
+  /* ── 进度条 ── */
+  .progress-bar { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; background: #1677ff; }
+  .progress-fill.green { background: #52c41a; }
+  .progress-fill.orange { background: #fa8c16; }
+  .progress-fill.red { background: #ff4d4f; }
+
+  /* ── 告警区 ── */
+  .alert-list { padding: 0 20px; display: flex; flex-direction: column; gap: 10px; }
+  .alert-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-radius: 6px; border: 1px solid; }
+  .alert-item.p0 { background: #fff1f0; border-color: #ffccc7; }
+  .alert-item.p1 { background: #fff7e6; border-color: #ffd591; }
+  .alert-item.p2 { background: #fffbe6; border-color: #ffe58f; }
+  .alert-item.ok { background: #f6ffed; border-color: #b7eb8f; }
+  .alert-badge { padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-p0 { background: #ff4d4f; color: #fff; }
+  .badge-p1 { background: #fa8c16; color: #fff; }
+  .badge-p2 { background: #fadb14; color: #333; }
+  .badge-ok { background: #52c41a; color: #fff; }
+  .alert-content { flex: 1; }
+  .alert-title { font-size: 13px; font-weight: 500; color: #333; }
+  .alert-desc { font-size: 11px; color: #888; margin-top: 3px; }
+  .alert-time { font-size: 11px; color: #bbb; white-space: nowrap; }
+
+  /* ── 分页栏 ── */
+  .pagination { display: flex; align-items: center; justify-content: flex-end; padding: 10px 20px; gap: 6px; border-top: 1px solid #f0f0f0; font-size: 12px; color: #555; }
+  .page-btn { height: 26px; min-width: 26px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0 8px; font-size: 12px; }
+  .page-btn:hover, .page-btn.active { border-color: #1677ff; color: #1677ff; }
+  .page-total { color: #999; }
+
+  /* ── 规则清单 ── */
+  .rule-header { padding: 12px 20px; background: #fafafa; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+  .rule-type-tag { padding: 3px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; border: 1px solid #d9d9d9; background: #fff; color: #555; }
+  .rule-type-tag.active { background: #1677ff; color: #fff; border-color: #1677ff; }
+
+  /* 响应式小调整 */
+  @media (max-width: 1200px) {
+    .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+    .chart-section { grid-template-columns: 1fr; } { grid-template-columns: 1fr; }
+    .analysis-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 浏览器工具栏 -->
+<div class="browser-bar">
+  <div class="btn-group">
+    <button class="nav-btn">←</button>
+    <button class="nav-btn">→</button>
+    <button class="nav-btn">↻</button>
+  </div>
+  <div class="url-bar">http://dcc.internal/statistics/predialer-report</div>
+  <span class="title-center">总部DCC系统</span>
+  <span class="more-btn">···</span>
+</div>
+
+<!-- 系统顶栏 -->
+<div class="sys-header">
+  <span class="sys-title">预外呼效果报表</span>
+  <span class="user-info">电销主管</span>
+</div>
+
+<!-- 主体 -->
+<div class="main-layout">
+
+  <!-- 侧边导航 -->
+  <div class="sidebar">
+    <div class="nav-item" onclick="toggleGroup(this)">首页</div>
+
+    <div class="nav-group">
+      <div class="nav-item" onclick="toggleGroup(this)">NEV培育 <span class="arrow">▾</span></div>
+      <div class="nav-sub" style="display:none">
+        <div class="nav-item">培育任务</div>
+        <div class="nav-item">跟进记录</div>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-item" onclick="toggleGroup(this)">营销获客 <span class="arrow">▾</span></div>
+      <div class="nav-sub" style="display:none">
+        <div class="nav-item">线索列表</div>
+        <div class="nav-item">外呼任务</div>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-item" onclick="toggleGroup(this)">客户管理 <span class="arrow">▾</span></div>
+      <div class="nav-sub" style="display:none">
+        <div class="nav-item">客户列表</div>
+        <div class="nav-item">跟进记录</div>
+      </div>
+    </div>
+
+    <!-- 统计报表（展开状态） -->
+    <div class="nav-group">
+      <div class="nav-item active" onclick="toggleGroup(this, true)">统计报表 <span class="arrow open">▾</span></div>
+      <div class="nav-sub" id="stat-sub">
+        <div class="nav-item" onclick="setActive(this)">总部培育报表</div>
+        <div class="nav-item" onclick="setActive(this)">录音列表</div>
+        <div class="nav-item" onclick="setActive(this)">下载列表</div>
+        <div class="nav-item" onclick="setActive(this)">批量下发</div>
+        <!-- 新增菜单项 -->
+        <div class="nav-item active" onclick="setActive(this)">预外呼效果报表</div>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-item" onclick="toggleGroup(this)">基础设置 <span class="arrow">▾</span></div>
+      <div class="nav-sub" style="display:none">
+        <div class="nav-item">系统配置</div>
+        <div class="nav-item">权限管理</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 内容区 -->
+  <div class="content-area">
+
+    <!-- Tab导航 -->
+    <div class="tab-bar" id="main-tabs">
+      <div class="tab-item active" onclick="switchTab('overview')">总览看板</div>
+      <div class="tab-item" onclick="switchTab('sc')">SmartCode分析</div>
+      <div class="tab-item" onclick="switchTab('channel')">SC渠道分析</div>
+      <div class="tab-item" onclick="switchTab('status')">线索状态分析</div>
+      <div class="tab-item" onclick="switchTab('quality')">外呼质量分析</div>
+      <div class="tab-item" onclick="switchTab('redial')">话单重推分析</div>
+      <div class="tab-item" onclick="switchTab('skillgroup')">技能组分析</div>
+      <div class="tab-item" onclick="switchTab('alert')">告警监控</div>
+    </div>
+
+    <!-- 页面主体 -->
+    <div class="page-body">
+
+      <!-- ══════════════════════════════════════════════════════
+           TAB 1：总览看板
+      ═══════════════════════════════════════════════════════ -->
+      <div class="tab-panel active" id="panel-overview">
+
+        <!-- 筛选栏 -->
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span class="filter-label required">统计时间：</span>
+            <div class="filter-range">
+              <input type="date" class="filter-input date" value="2026-03-01">
+              <span>→</span>
+              <input type="date" class="filter-input date" value="2026-03-31">
+            </div>
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">SC渠道：</span>
+            <select class="filter-select"><option>全部</option><option>百度SEM</option><option>抖音信息流</option><option>自然流量</option></select>
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">技能组：</span>
+            <select class="filter-select"><option>全部</option><option>技能组A</option><option>技能组B</option><option>技能组C</option></select>
+          </div>
+          <div class="btn-group-right">
+            <button class="btn btn-default" onclick="resetFilters()">重置</button>
+            <button class="btn btn-primary">查询</button>
+            <button class="btn btn-info">刷新</button>
+            <button class="expand-btn">展开 ∨</button>
+          </div>
+        </div>
+
+        <!-- KPI 卡片 -->
+        <div class="kpi-section">
+          <div class="kpi-grid">
+            <div class="kpi-card c1">
+              <div class="kpi-title">人工客服任务总量</div>
+              <div class="kpi-value">18,642</div>
+              <div class="kpi-meta"><span class="trend-up"></span><span class="kpi-rate">较上月 +12.3%</span></div>
+            </div>
+            <div class="kpi-card c2">
+              <div class="kpi-title">已推送任务量</div>
+              <div class="kpi-value">15,891</div>
+              <div class="kpi-meta">推送率 <span class="kpi-rate">85.2%</span></div>
+            </div>
+            <div class="kpi-card" style="border-top:3px solid #fa541c">
+              <div class="kpi-title">话单待回传</div>
+              <div class="kpi-value" style="color:#fa541c">2,186</div>
+              <div class="kpi-meta">占比 <span style="color:#fa541c;font-weight:600">13.8%</span> · 阈值 15%</div>
+            </div>
+            <div class="kpi-card" style="border-top:3px solid #ff4d4f">
+              <div class="kpi-title">话单超时未回传</div>
+              <div class="kpi-value" style="color:#ff4d4f">412</div>
+              <div class="kpi-meta">超24h <span style="color:#ff4d4f;font-weight:600">412</span> · 超48h <span style="color:#ff4d4f;font-weight:600">87</span> · 阈值100</div>
+            </div>
+            <div class="kpi-card c3">
+              <div class="kpi-title">外呼接通量</div>
+              <div class="kpi-value">9,534</div>
+              <div class="kpi-meta">接通率 <span class="kpi-rate">60.0%</span></div>
+            </div>
+            <div class="kpi-card c4">
+              <div class="kpi-title">有效通话量</div>
+              <div class="kpi-value">7,181</div>
+              <div class="kpi-meta">有效通话率 <span class="kpi-rate">75.3%</span></div>
+            </div>
+            <div class="kpi-card c5">
+              <div class="kpi-title">线索到店量</div>
+              <div class="kpi-value">1,621</div>
+              <div class="kpi-meta">到店率 <span class="kpi-rate">17.0%</span></div>
+            </div>
+            <div class="kpi-card c6">
+              <div class="kpi-title">线索成交量</div>
+              <div class="kpi-value">486</div>
+              <div class="kpi-meta">成交率 <span class="kpi-rate">5.1%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 图表区：折线图 + 漏斗图 -->
+        <div class="chart-section">
+          <!-- 趋势折线图 -->
+          <div class="chart-card">
+            <div class="chart-title">
+              核心指标趋势（近30日）
+              <div class="trend-tabs" style="display:flex;gap:8px;font-size:11px;">
+                <span class="trend-tab active" data-key="task" style="color:#1677ff;cursor:pointer;border-bottom:2px solid #1677ff;padding-bottom:2px;transition:all .2s;" onclick="switchTrend('task')">任务量</span>
+                <span class="trend-tab" data-key="push" style="color:#999;cursor:pointer;border-bottom:2px solid transparent;padding-bottom:2px;transition:all .2s;" onclick="switchTrend('push')">推送量</span>
+                <span class="trend-tab" data-key="connect" style="color:#999;cursor:pointer;border-bottom:2px solid transparent;padding-bottom:2px;transition:all .2s;" onclick="switchTrend('connect')">接通量</span>
+                <span class="trend-tab" data-key="visit" style="color:#999;cursor:pointer;border-bottom:2px solid transparent;padding-bottom:2px;transition:all .2s;" onclick="switchTrend('visit')">到店量</span>
+              </div>
+            </div>
+            <svg class="chart-svg" id="trend-chart" viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg">
+              <!-- 网格 -->
+              <line x1="40" y1="10" x2="40" y2="140" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="40" y1="10" x2="560" y2="10" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="40" y1="42" x2="560" y2="42" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="40" y1="74" x2="560" y2="74" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="40" y1="106" x2="560" y2="106" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="40" y1="138" x2="560" y2="138" stroke="#f0f0f0" stroke-width="1"/>
+              <!-- Y轴标签 -->
+              <text id="trend-y1" x="36" y="13" text-anchor="end" font-size="9" fill="#bbb">2000</text>
+              <text id="trend-y2" x="36" y="45" text-anchor="end" font-size="9" fill="#bbb">1500</text>
+              <text id="trend-y3" x="36" y="77" text-anchor="end" font-size="9" fill="#bbb">1000</text>
+              <text id="trend-y4" x="36" y="109" text-anchor="end" font-size="9" fill="#bbb">500</text>
+              <text x="36" y="141" text-anchor="end" font-size="9" fill="#bbb">0</text>
+              <!-- 任务量折线（蓝） -->
+              <polyline id="line-task" points="40,38 59,35 78,40 97,32 116,36 135,28 154,33 173,30 192,26 211,30 230,24 249,28 268,22 287,26 306,20 325,24 344,18 363,22 382,16 401,20 420,14 439,18 458,12 477,16 496,10 515,14 534,8 553,12" fill="none" stroke="#1677ff" stroke-width="2"/>
+              <!-- 推送量折线（绿） -->
+              <polyline id="line-push" points="40,52 59,49 78,54 97,46 116,50 135,42 154,47 173,44 192,40 211,44 230,38 249,42 268,36 287,40 306,34 325,38 344,32 363,36 382,30 401,34 420,28 439,32 458,26 477,30 496,24 515,28 534,22 553,26" fill="none" stroke="#52c41a" stroke-width="2" opacity="0"/>
+              <!-- 接通量折线（青） -->
+              <polyline id="line-connect" points="40,68 59,70 78,66 97,72 116,69 135,64 154,67 173,63 192,65 211,61 230,63 249,60 268,58 287,62 306,56 325,59 344,55 363,57 382,53 401,56 420,52 439,54 458,50 477,53 496,48 515,51 534,47 553,49" fill="none" stroke="#13c2c2" stroke-width="2" opacity="0"/>
+              <!-- 到店量折线（橙） -->
+              <polyline id="line-visit" points="40,108 59,106 78,110 97,104 116,108 135,102 154,105 173,100 192,103 211,98 230,101 249,96 268,99 287,94 306,97 325,93 344,95 363,91 382,94 401,90 420,93 439,89 458,92 477,88 496,91 515,87 534,90 553,86" fill="none" stroke="#fa8c16" stroke-width="2" opacity="0"/>
+              <!-- 面积渐变 - 任务量 -->
+              <defs>
+                <linearGradient id="grad-task" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#1677ff" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#1677ff" stop-opacity="0.02"/>
+                </linearGradient>
+                <linearGradient id="grad-push" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#52c41a" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#52c41a" stop-opacity="0.02"/>
+                </linearGradient>
+                <linearGradient id="grad-connect" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#13c2c2" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#13c2c2" stop-opacity="0.02"/>
+                </linearGradient>
+                <linearGradient id="grad-visit" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#fa8c16" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#fa8c16" stop-opacity="0.02"/>
+                </linearGradient>
+              </defs>
+              <polygon id="area-task" points="40,138 40,38 59,35 78,40 97,32 116,36 135,28 154,33 173,30 192,26 211,30 230,24 249,28 268,22 287,26 306,20 325,24 344,18 363,22 382,16 401,20 420,14 439,18 458,12 477,16 496,10 515,14 534,8 553,12 553,138" fill="url(#grad-task)" opacity="1"/>
+              <polygon id="area-push" points="40,138 40,52 59,49 78,54 97,46 116,50 135,42 154,47 173,44 192,40 211,44 230,38 249,42 268,36 287,40 306,34 325,38 344,32 363,36 382,30 401,34 420,28 439,32 458,26 477,30 496,24 515,28 534,22 553,26 553,138" fill="url(#grad-push)" opacity="0"/>
+              <polygon id="area-connect" points="40,138 40,68 59,70 78,66 97,72 116,69 135,64 154,67 173,63 192,65 211,61 230,63 249,60 268,58 287,62 306,56 325,59 344,55 363,57 382,53 401,56 420,52 439,54 458,50 477,53 496,48 515,51 534,47 553,49 553,138" fill="url(#grad-connect)" opacity="0"/>
+              <polygon id="area-visit" points="40,138 40,108 59,106 78,110 97,104 116,108 135,102 154,105 173,100 192,103 211,98 230,101 249,96 268,99 287,94 306,97 325,93 344,95 363,91 382,94 401,90 420,93 439,89 458,92 477,88 496,91 515,87 534,90 553,86 553,138" fill="url(#grad-visit)" opacity="0"/>
+              <!-- X轴日期 -->
+              <text x="40" y="153" text-anchor="middle" font-size="9" fill="#bbb">3/1</text>
+              <text x="135" y="153" text-anchor="middle" font-size="9" fill="#bbb">3/6</text>
+              <text x="230" y="153" text-anchor="middle" font-size="9" fill="#bbb">3/11</text>
+              <text x="325" y="153" text-anchor="middle" font-size="9" fill="#bbb">3/16</text>
+              <text x="420" y="153" text-anchor="middle" font-size="9" fill="#bbb">3/21</text>
+              <text x="553" y="153" text-anchor="middle" font-size="9" fill="#bbb">3/31</text>
+              <!-- 图例 -->
+              <circle cx="47" cy="171" r="4" fill="#1677ff"/>
+              <text x="55" y="174" font-size="9" fill="#888">任务量</text>
+              <circle cx="107" cy="171" r="4" fill="#52c41a"/>
+              <text x="115" y="174" font-size="9" fill="#888">推送量</text>
+              <circle cx="167" cy="171" r="4" fill="#13c2c2"/>
+              <text x="175" y="174" font-size="9" fill="#888">接通量</text>
+              <circle cx="227" cy="171" r="4" fill="#fa8c16"/>
+              <text x="235" y="174" font-size="9" fill="#888">到店量</text>
+            </svg>
+          </div>
+
+          <!-- 全链路漏斗 -->
+          <div class="chart-card">
+            <div class="chart-title">全链路转化漏斗</div>
+            <div class="funnel-wrap">
+              <!-- 层1 -->
+              <div class="funnel-step">
+                <div class="funnel-label">任务总量</div>
+                <div class="funnel-bar-wrap">
+                  <div class="funnel-bar" style="width:100%;background:#1677ff;">18,642</div>
+                </div>
+                <div class="funnel-val">18,642</div>
+              </div>
+              <div class="funnel-arrow">↓ 规则命中率 91.2%</div>
+              <!-- 层2 -->
+              <div class="funnel-step">
+                <div class="funnel-label">规则命中</div>
+                <div class="funnel-bar-wrap">
+                  <div class="funnel-bar" style="width:91%;background:#2e86ff;">17,001</div>
+                </div>
+                <div class="funnel-val">17,001</div>
+              </div>
+              <div class="funnel-arrow">↓ 推送率 93.5%</div>
+              <!-- 层3 -->
+              <div class="funnel-step">
+                <div class="funnel-label">推送成功</div>
+                <div class="funnel-bar-wrap">
+                  <div class="funnel-bar" style="width:85%;background:#52c41a;">15,891</div>
+                </div>
+                <div class="funnel-val">15,891</div>
+              </div>
+              <div class="funnel-arrow">↓ 话单回传率 86.2%</div>
+              <!-- 层3.5：话单已回传 -->
+              <div class="funnel-step">
+                <div class="funnel-label">话单已回传</div>
+                <div class="funnel-bar-wrap">
+                  <div class="funnel-bar" style="width:73%;background:#fa541c;">13,705</div>
+                </div>
+                <div class="funnel-val">13,705</div>
+              </div>
+              <div class="funnel-arrow">↓ 接通率 69.6%（已回传口径）</div>
+              <!-- 层4 -->
+              <div class="funnel-step">
+                <div class="funnel-label">外呼接通</div>
+                <div class="funnel-bar-wrap">
+                  <div class="funnel-bar" style="width:51%;background:#13c2c2;">9,534</div>
+                </div>
+                <div class="funnel-val">9,534</div>
+              </div>
+              <div class="funnel-arrow">↓ 有效通话率 75.3%</div>
+              <!-- 层5 -->
+              <div class="funnel-step">
+                <div class="funnel-label">有效通话</div>
+                <div class="funnel-bar-wrap">
+                  <div class="funnel-bar" style="width:45%;background:#fa8c16;">7,181</div>
+                </div>
+                <div class="funnel-val">7,181</div>
+              </div>
+              <div class="funnel-arrow">↓ 到店率 17.0%</div>
+              <!-- 层6 -->
+              <div class="funnel-step">
+                <div class="funnel-label">到店</div>
+                <div class="funnel-bar-wrap">
+                  <div class="funnel-bar" style="width:18%;background:#722ed1;">1,621</div>
+                </div>
+                <div class="funnel-val">1,621</div>
+              </div>
+              <div class="funnel-arrow">↓ 成交率 30.0%</div>
+              <!-- 层7 -->
+              <div class="funnel-step">
+                <div class="funnel-label">成交</div>
+                <div class="funnel-bar-wrap">
+                  <div class="funnel-bar" style="width:8%;background:#eb2f96;">486</div>
+                </div>
+                <div class="funnel-val">486</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /panel-overview -->
+
+
+      <!-- ══════════════════════════════════════════════════════
+           TAB 2：SmartCode 分析
+      ═══════════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panel-sc">
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span class="filter-label required">统计时间：</span>
+            <div class="filter-range">
+              <input type="date" class="filter-input date" value="2026-03-01">
+              <span>→</span>
+              <input type="date" class="filter-input date" value="2026-03-31">
+            </div>
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">SmartCode：</span>
+            <input type="text" class="filter-input" placeholder="请输入">
+          </div>
+          <div class="btn-group-right">
+            <button class="btn btn-default">重置</button>
+            <button class="btn btn-primary">查询</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>序号</th><th>SmartCode</th><th>渠道</th><th>任务量</th>
+                <th>已推送量</th><th>推送率</th><th>话单待回传</th><th>接通量</th><th>接通率</th>
+                <th>到店量</th><th>成交量</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>BD_SEM_001</td><td>百度SEM</td><td>3,842</td><td>3,421</td><td><div class="progress-bar"><div class="progress-fill" style="width:89%"></div></div> 89.0%</td><td style="color:#fa8c16">428</td><td>2,053</td><td>60.0%</td><td>349</td><td>105</td></tr>
+              <tr><td>2</td><td>TT_INFO_002</td><td>抖音信息流</td><td>4,211</td><td>3,790</td><td><div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div> 90.0%</td><td style="color:#fa8c16">521</td><td>2,274</td><td>60.0%</td><td>387</td><td>116</td></tr>
+              <tr><td>3</td><td>GDT_003</td><td>广点通</td><td>2,108</td><td>1,687</td><td><div class="progress-bar"><div class="progress-fill orange" style="width:80%"></div></div> 80.0%</td><td style="color:#fa8c16">286</td><td>1,012</td><td>60.0%</td><td>172</td><td>52</td></tr>
+              <tr><td>4</td><td>XHS_004</td><td>小红书</td><td>1,562</td><td>0</td><td><div class="progress-bar"><div class="progress-fill red" style="width:0%"></div></div> 0%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+              <tr><td>5</td><td>NATURE_005</td><td>自然流量</td><td>2,841</td><td>2,557</td><td><div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div> 90.0%</td><td style="color:#52c41a">312</td><td>1,534</td><td>60.0%</td><td>261</td><td>78</td></tr>
+              <tr><td>6</td><td>KS_VIDEO_006</td><td>快手视频</td><td>1,243</td><td>0</td><td><div class="progress-bar"><div class="progress-fill red" style="width:0%"></div></div> 0%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+              <tr><td>7</td><td>WX_MP_007</td><td>微信公众号</td><td>2,835</td><td>2,436</td><td><div class="progress-bar"><div class="progress-fill" style="width:86%"></div></div> 86.0%</td><td style="color:#fa8c16">342</td><td>1,462</td><td>60.0%</td><td>249</td><td>74</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span class="page-total">共 24 条</span>
+          <button class="page-btn">«</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">»</button>
+        </div>
+      </div>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           TAB 3：SC 渠道分析
+      ═══════════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panel-channel">
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span class="filter-label required">统计时间：</span>
+            <div class="filter-range">
+              <input type="date" class="filter-input date" value="2026-03-01">
+              <span>→</span>
+              <input type="date" class="filter-input date" value="2026-03-31">
+            </div>
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">渠道：</span>
+            <select class="filter-select wide"><option>全部</option><option>百度SEM</option><option>抖音信息流</option><option>快手视频</option><option>微信公众号</option><option>自然流量</option></select>
+          </div>
+          <div class="btn-group-right">
+            <button class="btn btn-default">重置</button>
+            <button class="btn btn-primary">查询</button>
+          </div>
+        </div>
+
+        <div class="analysis-grid">
+          <!-- 渠道任务量柱状图 -->
+          <div class="analysis-card">
+            <div class="chart-title">各渠道任务量与推送率</div>
+            <svg viewBox="0 0 460 200" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+              <!-- 网格 -->
+              <line x1="80" y1="10" x2="80" y2="165" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="80" y1="10" x2="455" y2="10" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="80" y1="50" x2="455" y2="50" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="80" y1="90" x2="455" y2="90" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="80" y1="130" x2="455" y2="130" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="80" y1="165" x2="455" y2="165" stroke="#e8e8e8" stroke-width="1"/>
+              <!-- Y轴标签 -->
+              <text x="76" y="13" text-anchor="end" font-size="9" fill="#bbb">5000</text>
+              <text x="76" y="53" text-anchor="end" font-size="9" fill="#bbb">3750</text>
+              <text x="76" y="93" text-anchor="end" font-size="9" fill="#bbb">2500</text>
+              <text x="76" y="133" text-anchor="end" font-size="9" fill="#bbb">1250</text>
+              <text x="76" y="168" text-anchor="end" font-size="9" fill="#bbb">0</text>
+              <!-- 柱子：百度SEM 3842 -->
+              <rect x="90" y="47" width="30" height="118" fill="#1677ff" rx="2"/>
+              <rect x="122" y="47" width="30" height="118" fill="#1677ff88" rx="2"/>
+              <!-- 柱子：抖音 4211 -->
+              <rect x="160" y="37" width="30" height="128" fill="#13c2c2" rx="2"/>
+              <rect x="192" y="42" width="30" height="123" fill="#13c2c288" rx="2"/>
+              <!-- 柱子：广点通 2108 -->
+              <rect x="230" y="97" width="30" height="68" fill="#fa8c16" rx="2"/>
+              <rect x="262" y="110" width="30" height="55" fill="#fa8c1688" rx="2"/>
+              <!-- 柱子：微信 2835 -->
+              <rect x="300" y="72" width="30" height="93" fill="#722ed1" rx="2"/>
+              <rect x="332" y="76" width="30" height="89" fill="#722ed188" rx="2"/>
+              <!-- 柱子：自然 2841 -->
+              <rect x="370" y="72" width="30" height="93" fill="#52c41a" rx="2"/>
+              <rect x="402" y="76" width="30" height="89" fill="#52c41a88" rx="2"/>
+              <!-- X轴标签 -->
+              <text x="105" y="178" text-anchor="middle" font-size="8.5" fill="#888">百度SEM</text>
+              <text x="175" y="178" text-anchor="middle" font-size="8.5" fill="#888">抖音信息流</text>
+              <text x="245" y="178" text-anchor="middle" font-size="8.5" fill="#888">广点通</text>
+              <text x="315" y="178" text-anchor="middle" font-size="8.5" fill="#888">微信公号</text>
+              <text x="385" y="178" text-anchor="middle" font-size="8.5" fill="#888">自然流量</text>
+              <!-- 图例 -->
+              <rect x="84" y="190" width="10" height="8" fill="#1677ff" rx="1"/>
+              <text x="97" y="198" font-size="9" fill="#888">任务量</text>
+              <rect x="140" y="190" width="10" height="8" fill="#1677ff88" rx="1"/>
+              <text x="153" y="198" font-size="9" fill="#888">推送量</text>
+            </svg>
+          </div>
+
+          <!-- 渠道转化率对比 -->
+          <div class="analysis-card">
+            <div class="chart-title">各渠道转化率对比</div>
+            <table class="data-table">
+              <thead>
+                <tr><th>渠道</th><th>推送率</th><th>话单待回传</th><th>接通率</th><th>到店率</th><th>成交率</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="tag tag-blue">百度SEM</span></td>
+                  <td>89.0%</td><td style="color:#fa8c16">428</td><td>60.0%</td>
+                  <td style="color:#52c41a;font-weight:600">18.2%</td>
+                  <td style="color:#52c41a;font-weight:600">5.5%</td>
+                </tr>
+                <tr>
+                  <td><span class="tag tag-green">抖音信息流</span></td>
+                  <td>90.0%</td><td style="color:#fa8c16">521</td><td>60.0%</td>
+                  <td>17.0%</td><td>5.1%</td>
+                </tr>
+                <tr>
+                  <td><span class="tag tag-orange">广点通</span></td>
+                  <td>80.0%</td><td style="color:#fa8c16">286</td><td>60.0%</td>
+                  <td style="color:#fa8c16">16.5%</td>
+                  <td style="color:#fa8c16">4.8%</td>
+                </tr>
+                <tr>
+                  <td><span class="tag tag-gray">微信公众号</span></td>
+                  <td>86.0%</td><td style="color:#fa8c16">342</td><td>60.0%</td>
+                  <td>17.3%</td><td>5.2%</td>
+                </tr>
+                <tr>
+                  <td><span style="color:#52c41a;font-size:11px">✦ 自然流量</span></td>
+                  <td style="color:#52c41a;font-weight:600">90.0%</td>
+                  <td style="color:#52c41a">312</td>
+                  <td style="color:#52c41a;font-weight:600">61.2%</td>
+                  <td style="color:#52c41a;font-weight:600">19.5%</td>
+                  <td style="color:#52c41a;font-weight:600">6.0%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           TAB 4：线索状态分析
+      ═══════════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panel-status">
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span class="filter-label required">统计时间：</span>
+            <div class="filter-range">
+              <input type="date" class="filter-input date" value="2026-03-01">
+              <span>→</span>
+              <input type="date" class="filter-input date" value="2026-03-31">
+            </div>
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">线索状态：</span>
+            <select class="filter-select wide"><option>全部</option><option>未跟进</option><option>跟进中</option><option>已预约</option><option>已到店</option></select>
+          </div>
+          <div class="btn-group-right">
+            <button class="btn btn-default">重置</button>
+            <button class="btn btn-primary">查询</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>线索状态</th><th>任务量</th><th>占比</th><th>已推送量</th><th>推送率</th>
+                <th>话单待回传</th><th>接通率</th><th>到店率</th><th>成交率</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="tag tag-red">未跟进</span></td>
+                <td>7,234</td><td>38.8%</td><td>6,872</td>
+                <td><div class="progress-bar"><div class="progress-fill" style="width:95%"></div></div> 95.0%</td>
+                <td style="color:#fa8c16">912</td>
+                <td>62.3%</td><td>19.8%</td><td>3.1%</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-orange">跟进中</span></td>
+                <td>5,891</td><td>31.6%</td><td>5,302</td>
+                <td><div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div> 90.0%</td>
+                <td style="color:#fa8c16">698</td>
+                <td>58.4%</td><td>16.5%</td><td>2.9%</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-blue">已预约</span></td>
+                <td>3,218</td><td>17.3%</td><td>2,893</td>
+                <td><div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div> 89.9%</td>
+                <td style="color:#52c41a">384</td>
+                <td>71.2%</td><td>32.4%</td><td>28.5%</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-gray">已到店</span></td>
+                <td>1,854</td><td>9.9%</td><td>0</td>
+                <td><div class="progress-bar"><div class="progress-fill red" style="width:0%"></div></div> 0%</td>
+                <td>—</td><td>—</td><td>—</td><td>100%</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-gray">已成交</span></td>
+                <td>445</td><td>2.4%</td><td>0</td>
+                <td><div class="progress-bar"><div class="progress-fill red" style="width:0%"></div></div> 0%</td>
+                <td>—</td><td>—</td><td>—</td><td>—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           TAB 5：外呼质量分析
+      ═══════════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panel-quality">
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span class="filter-label required">统计时间：</span>
+            <div class="filter-range">
+              <input type="date" class="filter-input date" value="2026-03-01">
+              <span>→</span>
+              <input type="date" class="filter-input date" value="2026-03-31">
+            </div>
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">技能组：</span>
+            <select class="filter-select"><option>全部</option><option>技能组A</option><option>技能组B</option></select>
+          </div>
+          <div class="btn-group-right">
+            <button class="btn btn-default">重置</button>
+            <button class="btn btn-primary">查询</button>
+          </div>
+        </div>
+
+        <!-- 质量KPI -->
+        <div class="kpi-section">
+          <div class="kpi-grid">
+            <div class="kpi-card c1">
+              <div class="kpi-title">外呼总次数</div>
+              <div class="kpi-value">17,240</div>
+              <div class="kpi-meta">含重推 <span style="color:#1677ff">1,349次</span></div>
+            </div>
+            <div class="kpi-card c3">
+              <div class="kpi-title">接通次数</div>
+              <div class="kpi-value">10,344</div>
+              <div class="kpi-meta">接通率 <span class="kpi-rate">60.0%</span></div>
+            </div>
+            <div class="kpi-card c4">
+              <div class="kpi-title">有效通话（≥30s）</div>
+              <div class="kpi-value">7,789</div>
+              <div class="kpi-meta">有效通话率 <span class="kpi-rate">75.3%</span></div>
+            </div>
+            <div class="kpi-card c2">
+              <div class="kpi-title">平均通话时长</div>
+              <div class="kpi-value">52s</div>
+              <div class="kpi-meta">中位数 <span style="color:#555">44s</span></div>
+            </div>
+            <div class="kpi-card c6">
+              <div class="kpi-title">最优拨打时段</div>
+              <div class="kpi-value">10-11时</div>
+              <div class="kpi-meta">接通率峰值 <span class="kpi-rate">71.2%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="analysis-grid">
+          <!-- 未接通原因 -->
+          <div class="analysis-card">
+            <div class="chart-title">未接通原因分布</div>
+            <table class="data-table">
+              <thead><tr><th>原因</th><th>次数</th><th>占比</th><th>趋势</th></tr></thead>
+              <tbody>
+                <tr><td>无人接听</td><td>3,128</td><td>45.5%</td><td><span style="color:#fa8c16">→持平</span></td></tr>
+                <tr><td>主动挂断</td><td>2,213</td><td>32.1%</td><td><span style="color:#52c41a">↓ -2.1%</span></td></tr>
+                <tr><td>关机/停机</td><td>682</td><td>9.9%</td><td><span style="color:#52c41a">↓ -0.8%</span></td></tr>
+                <tr><td>空号/错号</td><td>421</td><td>6.1%</td><td><span style="color:#ff4d4f">↑ +1.2%</span></td></tr>
+                <tr><td>拒接</td><td>452</td><td>6.4%</td><td><span style="color:#fa8c16">→持平</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 拨打时段热力图 -->
+          <div class="analysis-card">
+            <div class="chart-title">24小时接通率热力图</div>
+            <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-top:8px;">
+              <!-- 上半行 0-11时 -->
+              <div style="background:#f0f0f0;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#bbb">00时<br/>18%</div>
+              <div style="background:#d6e8ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#888">01时<br/>12%</div>
+              <div style="background:#f0f0f0;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#bbb">02时<br/>8%</div>
+              <div style="background:#f0f0f0;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#bbb">03时<br/>5%</div>
+              <div style="background:#d6e8ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#888">08时<br/>55%</div>
+              <div style="background:#a8d4ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#555">09时<br/>63%</div>
+              <div style="background:#1677ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#fff;font-weight:600">10时<br/>71%</div>
+              <div style="background:#2e86ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#fff">11时<br/>68%</div>
+              <div style="background:#a8d4ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#555">12时<br/>58%</div>
+              <div style="background:#d6e8ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#888">13时<br/>52%</div>
+              <div style="background:#6db8ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#fff">14时<br/>65%</div>
+              <div style="background:#4096ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#fff">15时<br/>67%</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-top:3px;">
+              <div style="background:#6db8ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#fff">16时<br/>64%</div>
+              <div style="background:#a8d4ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#555">17时<br/>59%</div>
+              <div style="background:#d6e8ff;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#888">18时<br/>49%</div>
+              <div style="background:#f0f0f0;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#bbb">19时<br/>40%</div>
+              <div style="background:#f0f0f0;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#bbb">20时<br/>35%</div>
+              <div style="background:#f0f0f0;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#bbb">21时<br/>28%</div>
+              <div style="background:#f0f0f0;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#bbb">22时<br/>22%</div>
+              <div style="background:#f0f0f0;border-radius:3px;text-align:center;padding:6px 0;font-size:10px;color:#bbb">23时<br/>15%</div>
+              <div></div><div></div><div></div><div></div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;margin-top:10px;font-size:10px;color:#888">
+              <span>接通率颜色：</span>
+              <div style="display:flex;gap:2px">
+                <div style="width:16px;height:10px;background:#f0f0f0;border-radius:1px"></div>
+                <div style="width:16px;height:10px;background:#d6e8ff;border-radius:1px"></div>
+                <div style="width:16px;height:10px;background:#a8d4ff;border-radius:1px"></div>
+                <div style="width:16px;height:10px;background:#6db8ff;border-radius:1px"></div>
+                <div style="width:16px;height:10px;background:#1677ff;border-radius:1px"></div>
+              </div>
+              <span>低 → 高</span>
+            </div>
+          </div>
+
+          <!-- 通话时长分布 -->
+          <div class="analysis-card">
+            <div class="chart-title">通话时长分布</div>
+            <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+              <line x1="50" y1="10" x2="50" y2="140" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="50" y1="140" x2="310" y2="140" stroke="#e8e8e8" stroke-width="1"/>
+              <line x1="50" y1="110" x2="310" y2="110" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="50" y1="80" x2="310" y2="80" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="50" y1="50" x2="310" y2="50" stroke="#f0f0f0" stroke-width="1"/>
+              <text x="46" y="143" text-anchor="end" font-size="9" fill="#bbb">0</text>
+              <text x="46" y="113" text-anchor="end" font-size="9" fill="#bbb">2000</text>
+              <text x="46" y="83" text-anchor="end" font-size="9" fill="#bbb">4000</text>
+              <text x="46" y="53" text-anchor="end" font-size="9" fill="#bbb">6000</text>
+              <!-- <15s -->
+              <rect x="65" y="112" width="40" height="28" fill="#ff4d4f" rx="2" opacity="0.8"/>
+              <text x="85" y="108" text-anchor="middle" font-size="8" fill="#ff4d4f" font-weight="600">1,850</text>
+              <text x="85" y="158" text-anchor="middle" font-size="8" fill="#888">&lt;15s</text>
+              <!-- 15-30s -->
+              <rect x="115" y="86" width="40" height="54" fill="#fa8c16" rx="2" opacity="0.8"/>
+              <text x="135" y="82" text-anchor="middle" font-size="8" fill="#fa8c16" font-weight="600">3,595</text>
+              <text x="135" y="158" text-anchor="middle" font-size="8" fill="#888">15-30s</text>
+              <!-- 30-60s -->
+              <rect x="165" y="50" width="40" height="90" fill="#1677ff" rx="2" opacity="0.8"/>
+              <text x="185" y="46" text-anchor="middle" font-size="8" fill="#1677ff" font-weight="600">5,993</text>
+              <text x="185" y="158" text-anchor="middle" font-size="8" fill="#888">30-60s</text>
+              <!-- 60-120s -->
+              <rect x="215" y="68" width="40" height="72" fill="#52c41a" rx="2" opacity="0.8"/>
+              <text x="235" y="64" text-anchor="middle" font-size="8" fill="#52c41a" font-weight="600">4,796</text>
+              <text x="235" y="158" text-anchor="middle" font-size="8" fill="#888">60-120s</text>
+              <!-- >120s -->
+              <rect x="265" y="98" width="40" height="42" fill="#722ed1" rx="2" opacity="0.8"/>
+              <text x="285" y="94" text-anchor="middle" font-size="8" fill="#722ed1" font-weight="600">2,805</text>
+              <text x="285" y="158" text-anchor="middle" font-size="8" fill="#888">&gt;120s</text>
+              <!-- 有效通话阈值线 -->
+              <line x1="155" y1="10" x2="155" y2="140" stroke="#1677ff" stroke-width="1" stroke-dasharray="3 2"/>
+              <text x="157" y="20" font-size="8" fill="#1677ff">30s阈值</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 挂机方向 + 技能组通话时长 -->
+        <div class="analysis-grid">
+          <div class="analysis-card">
+            <div class="chart-title">挂机方向分布</div>
+            <svg viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg" style="width:200px;margin:0 auto;display:block">
+              <!-- 简易饼图 -->
+              <circle cx="80" cy="85" r="65" fill="none" stroke="#f0f0f0" stroke-width="30"/>
+              <circle cx="80" cy="85" r="65" fill="none" stroke="#1677ff" stroke-width="30" stroke-dasharray="197 210" stroke-dashoffset="0" transform="rotate(-90 80 85)"/>
+              <circle cx="80" cy="85" r="65" fill="none" stroke="#fa8c16" stroke-width="30" stroke-dasharray="86 321" stroke-dashoffset="-197" transform="rotate(-90 80 85)"/>
+              <circle cx="80" cy="85" r="65" fill="none" stroke="#52c41a" stroke-width="30" stroke-dasharray="37 370" stroke-dashoffset="-283" transform="rotate(-90 80 85)"/>
+              <circle cx="80" cy="85" r="65" fill="none" stroke="#999" stroke-width="30" stroke-dasharray="87 320" stroke-dashoffset="-320" transform="rotate(-90 80 85)"/>
+              <text x="80" y="82" text-anchor="middle" font-size="11" fill="#333" font-weight="600">挂机分布</text>
+              <text x="80" y="96" text-anchor="middle" font-size="9" fill="#888">10,344次接通</text>
+              <!-- 图例 -->
+              <rect x="5" y="165" width="8" height="8" fill="#1677ff" rx="1"/>
+              <text x="16" y="173" font-size="8" fill="#888">客户挂断 48.4%</text>
+              <rect x="105" y="165" width="8" height="8" fill="#fa8c16" rx="1"/>
+              <text x="116" y="173" font-size="8" fill="#888">系统挂断 21.2%</text>
+              <rect x="5" y="178" width="8" height="8" fill="#52c41a" rx="1"/>
+              <text x="16" y="186" font-size="8" fill="#888">正常结束 9.2%</text>
+              <rect x="105" y="178" width="8" height="8" fill="#999" rx="1"/>
+              <text x="116" y="186" font-size="8" fill="#888">其他 21.2%</text>
+            </svg>
+            <div style="font-size:11px;color:#999;margin-top:4px;text-align:center">客户挂断率 <span style="color:#52c41a;font-weight:600">48.4%</span>（阈值 &lt;40%）已超标</div>
+          </div>
+
+          <div class="analysis-card">
+            <div class="chart-title">各技能组平均通话时长（秒）</div>
+            <table class="data-table">
+              <thead><tr><th>技能组</th><th>平均时长</th><th>中位数</th><th>有效通话率</th></tr></thead>
+              <tbody>
+                <tr><td><span class="tag tag-blue">技能组A</span></td><td style="font-weight:600">56s</td><td>48s</td><td style="color:#52c41a">78.1%</td></tr>
+                <tr><td><span class="tag tag-green">技能组B</span></td><td>48s</td><td>41s</td><td>72.4%</td></tr>
+                <tr><td><span class="tag tag-orange">技能组C</span></td><td style="color:#fa8c16">41s</td><td>34s</td><td style="color:#fa8c16">68.3%</td></tr>
+              </tbody>
+            </table>
+            <div style="font-size:11px;color:#999;margin-top:8px">* 技能组C通话时长偏短，建议优化外呼话术</div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           TAB 5.5：话单重推分析（3.2.4）
+      ═══════════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panel-redial">
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span class="filter-label required">统计时间：</span>
+            <div class="filter-range">
+              <input type="date" class="filter-input date" value="2026-03-01">
+              <span>→</span>
+              <input type="date" class="filter-input date" value="2026-03-31">
+            </div>
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">话单状态：</span>
+            <select class="filter-select"><option>全部</option><option>无人接听</option><option>关机</option><option>空号</option><option>拒接</option></select>
+          </div>
+          <div class="btn-group-right">
+            <button class="btn btn-default">重置</button>
+            <button class="btn btn-primary">查询</button>
+          </div>
+        </div>
+
+        <!-- 重推KPI -->
+        <div class="kpi-section">
+          <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+            <div class="kpi-card c1">
+              <div class="kpi-title">重推触发总量</div>
+              <div class="kpi-value">3,284</div>
+              <div class="kpi-meta">占已推送 <span style="color:#1677ff">20.7%</span></div>
+            </div>
+            <div class="kpi-card c3">
+              <div class="kpi-title">重推后接通量</div>
+              <div class="kpi-value">1,448</div>
+              <div class="kpi-meta">重推接通率 <span class="kpi-rate">44.1%</span></div>
+            </div>
+            <div class="kpi-card c5">
+              <div class="kpi-title">重推后到店</div>
+              <div class="kpi-value">186</div>
+              <div class="kpi-meta">到店率 <span class="kpi-rate">12.8%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="analysis-grid">
+          <!-- 话单状态分布 -->
+          <div class="analysis-card">
+            <div class="chart-title">话单状态分布</div>
+            <table class="data-table">
+              <thead>
+                <tr><th>话单状态</th><th>触发次数</th><th>占比</th><th>重推执行量</th><th>重推后接通率</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="tag tag-gray">无人接听</span></td>
+                  <td>3,128</td><td>45.5%</td>
+                  <td>2,187</td><td style="color:#52c41a;font-weight:600">46.2%</td>
+                </tr>
+                <tr>
+                  <td><span class="tag tag-orange">主动挂断</span></td>
+                  <td>2,213</td><td>32.1%</td>
+                  <td>—</td><td>—</td>
+                </tr>
+                <tr>
+                  <td><span class="tag tag-gray">关机/停机</span></td>
+                  <td>682</td><td>9.9%</td>
+                  <td>581</td><td style="color:#fa8c16">38.7%</td>
+                </tr>
+                <tr>
+                  <td><span class="tag tag-red">空号/错号</span></td>
+                  <td>421</td><td>6.1%</td>
+                  <td>—</td><td>—</td>
+                </tr>
+                <tr>
+                  <td><span class="tag tag-gray">拒接</span></td>
+                  <td>452</td><td>6.4%</td>
+                  <td>516</td><td style="color:#fa8c16">35.1%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 重推次数分布 -->
+          <div class="analysis-card">
+            <div class="chart-title">任务重推次数分布</div>
+            <table class="data-table">
+              <thead><tr><th>推送次数</th><th>任务数</th><th>占比</th><th>平均接通率</th><th>平均到店率</th><th>成交率</th></tr></thead>
+              <tbody>
+                <tr><td>1次（首次推送）</td><td>12,607</td><td>79.3%</td><td style="color:#52c41a;font-weight:600">62.1%</td><td style="color:#52c41a;font-weight:600">17.5%</td><td style="color:#52c41a;font-weight:600">8.3%</td></tr>
+                <tr><td>2次</td><td>2,341</td><td>14.7%</td><td>44.8%</td><td>13.2%</td><td>6.1%</td></tr>
+                <tr><td>3次</td><td>689</td><td>4.3%</td><td style="color:#fa8c16">32.5%</td><td style="color:#fa8c16">8.6%</td><td style="color:#fa8c16">3.9%</td></tr>
+                <tr><td>≥4次</td><td>254</td><td>1.6%</td><td style="color:#ff4d4f">21.3%</td><td style="color:#ff4d4f">4.2%</td><td style="color:#ff4d4f">1.8%</td></tr>
+              </tbody>
+            </table>
+            <div style="font-size:11px;color:#999;margin-top:8px">* 重推次数≥4次的任务接通率和到店率显著下降，建议关注过度重推的骚扰风险</div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           TAB 5.6：技能组分析（3.2.5）
+      ═══════════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panel-skillgroup">
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span class="filter-label required">统计时间：</span>
+            <div class="filter-range">
+              <input type="date" class="filter-input date" value="2026-03-01">
+              <span>→</span>
+              <input type="date" class="filter-input date" value="2026-03-31">
+            </div>
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">技能组：</span>
+            <select class="filter-select"><option>全部</option><option>技能组A</option><option>技能组B</option><option>技能组C</option></select>
+          </div>
+          <div class="btn-group-right">
+            <button class="btn btn-default">重置</button>
+            <button class="btn btn-primary">查询</button>
+          </div>
+        </div>
+
+        <div class="analysis-grid">
+          <!-- 技能组核心指标 -->
+          <div class="analysis-card" style="grid-column:span 2">
+            <div class="chart-title">各技能组核心指标对比</div>
+            <table class="data-table">
+              <thead>
+                <tr><th>技能组</th><th>推送接收量</th><th>执行率</th><th>接通率</th><th>平均通话时长</th><th>到店率</th><th>成交率</th><th>积压量</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="tag tag-blue">技能组A</span></td>
+                  <td>6,842</td>
+                  <td><div class="progress-bar"><div class="progress-fill" style="width:96%"></div></div> 96.0%</td>
+                  <td style="color:#52c41a;font-weight:600">63.2%</td>
+                  <td>56s</td>
+                  <td style="color:#52c41a;font-weight:600">19.2%</td>
+                  <td style="color:#52c41a;font-weight:600">5.8%</td>
+                  <td><span style="color:#52c41a">142</span></td>
+                </tr>
+                <tr>
+                  <td><span class="tag tag-green">技能组B</span></td>
+                  <td>5,891</td>
+                  <td><div class="progress-bar"><div class="progress-fill" style="width:89%"></div></div> 89.5%</td>
+                  <td>57.8%</td>
+                  <td>48s</td>
+                  <td>15.6%</td>
+                  <td>4.7%</td>
+                  <td><span style="color:#ff4d4f;font-weight:600">623</span></td>
+                </tr>
+                <tr>
+                  <td><span class="tag tag-orange">技能组C</span></td>
+                  <td>3,158</td>
+                  <td><div class="progress-bar"><div class="progress-fill orange" style="width:82%"></div></div> 82.1%</td>
+                  <td style="color:#fa8c16">51.4%</td>
+                  <td>41s</td>
+                  <td style="color:#fa8c16">11.8%</td>
+                  <td style="color:#fa8c16">3.5%</td>
+                  <td><span style="color:#fa8c16">328</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 话单待回传按技能组 -->
+          <div class="analysis-card">
+            <div class="chart-title">话单待回传（按技能组）</div>
+            <table class="data-table">
+              <thead><tr><th>技能组</th><th>待回传</th><th>超24h</th><th>超48h</th><th>待回传率</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>技能组A</td>
+                  <td style="color:#fa541c;font-weight:600">876</td>
+                  <td>238</td>
+                  <td>52</td>
+                  <td style="color:#fa541c">12.8%</td>
+                </tr>
+                <tr>
+                  <td>技能组B</td>
+                  <td style="color:#fa541c;font-weight:600">892</td>
+                  <td>174</td>
+                  <td>35</td>
+                  <td style="color:#fa541c">15.1%</td>
+                </tr>
+                <tr>
+                  <td>技能组C</td>
+                  <td style="color:#ff4d4f;font-weight:600">418</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td style="color:#ff4d4f">13.2%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 技能组接通率趋势（简化SVG） -->
+        <div style="padding:0 20px 16px">
+          <div class="chart-card">
+            <div class="chart-title">各技能组接通率趋势（近7日）</div>
+            <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+              <line x1="50" y1="10" x2="50" y2="130" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="50" y1="10" x2="690" y2="10" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="50" y1="40" x2="690" y2="40" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="50" y1="70" x2="690" y2="70" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="50" y1="100" x2="690" y2="100" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="50" y1="130" x2="690" y2="130" stroke="#e8e8e8" stroke-width="1"/>
+              <text x="46" y="13" text-anchor="end" font-size="9" fill="#bbb">80%</text>
+              <text x="46" y="43" text-anchor="end" font-size="9" fill="#bbb">70%</text>
+              <text x="46" y="73" text-anchor="end" font-size="9" fill="#bbb">60%</text>
+              <text x="46" y="103" text-anchor="end" font-size="9" fill="#bbb">50%</text>
+              <text x="46" y="133" text-anchor="end" font-size="9" fill="#bbb">40%</text>
+              <!-- 技能组A -->
+              <polyline points="50,49 160,46 270,52 380,48 490,53 600,50 690,47" fill="none" stroke="#1677ff" stroke-width="2"/>
+              <!-- 技能组B -->
+              <polyline points="50,61 160,64 270,58 380,65 490,62 600,68 690,66" fill="none" stroke="#52c41a" stroke-width="2"/>
+              <!-- 技能组C -->
+              <polyline points="50,82 160,85 270,79 380,88 490,84 600,91 690,87" fill="none" stroke="#fa8c16" stroke-width="2" stroke-dasharray="4 2"/>
+              <!-- X轴 -->
+              <text x="50" y="148" text-anchor="middle" font-size="9" fill="#bbb">3/25</text>
+              <text x="160" y="148" text-anchor="middle" font-size="9" fill="#bbb">3/26</text>
+              <text x="270" y="148" text-anchor="middle" font-size="9" fill="#bbb">3/27</text>
+              <text x="380" y="148" text-anchor="middle" font-size="9" fill="#bbb">3/28</text>
+              <text x="490" y="148" text-anchor="middle" font-size="9" fill="#bbb">3/29</text>
+              <text x="600" y="148" text-anchor="middle" font-size="9" fill="#bbb">3/30</text>
+              <text x="690" y="148" text-anchor="middle" font-size="9" fill="#bbb">3/31</text>
+              <!-- 图例 -->
+              <line x1="52" y1="158" x2="68" y2="158" stroke="#1677ff" stroke-width="2"/>
+              <text x="71" y="161" font-size="9" fill="#888">技能组A</text>
+              <line x1="130" y1="158" x2="146" y2="158" stroke="#52c41a" stroke-width="2"/>
+              <text x="149" y="161" font-size="9" fill="#888">技能组B</text>
+              <line x1="210" y1="158" x2="226" y2="158" stroke="#fa8c16" stroke-width="2" stroke-dasharray="4 2"/>
+              <text x="229" y="161" font-size="9" fill="#888">技能组C</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           TAB 8：告警监控
+      ═══════════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panel-alert">
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span class="filter-label">告警级别：</span>
+            <select class="filter-select"><option>全部</option><option>P0 紧急</option><option>P1 重要</option><option>P2 提醒</option></select>
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">状态：</span>
+            <select class="filter-select"><option>全部</option><option>触发中</option><option>已恢复</option></select>
+          </div>
+          <div class="btn-group-right">
+            <button class="btn btn-default">重置</button>
+            <button class="btn btn-primary">查询</button>
+          </div>
+        </div>
+
+        <!-- 告警汇总 -->
+        <div class="kpi-section" style="padding-bottom:4px">
+          <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+            <div class="kpi-card" style="border-top:3px solid #ff4d4f">
+              <div class="kpi-title">P0 紧急告警</div>
+              <div class="kpi-value" style="color:#ff4d4f">0</div>
+              <div class="kpi-meta" style="color:#52c41a">当前无触发</div>
+            </div>
+            <div class="kpi-card" style="border-top:3px solid #fa8c16">
+              <div class="kpi-title">P1 重要告警</div>
+              <div class="kpi-value" style="color:#fa8c16">1</div>
+              <div class="kpi-meta" style="color:#fa8c16">技能组积压</div>
+            </div>
+            <div class="kpi-card" style="border-top:3px solid #fadb14">
+              <div class="kpi-title">P2 提醒告警</div>
+              <div class="kpi-value" style="color:#888">4</div>
+              <div class="kpi-meta">近24小时</div>
+            </div>
+            <div class="kpi-card" style="border-top:3px solid #52c41a">
+              <div class="kpi-title">今日已恢复</div>
+              <div class="kpi-value" style="color:#52c41a">3</div>
+              <div class="kpi-meta" style="color:#52c41a">系统健康</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert-list" style="padding-top:10px">
+          <div class="alert-item p1">
+            <span class="alert-badge badge-p1">P1</span>
+            <div class="alert-content">
+              <div class="alert-title">技能组B 积压量超阈值 —— 当前积压 <strong>623</strong> 条（阈值 500）</div>
+              <div class="alert-desc">建议：扩充技能组B资源或临时暂停新推送，预计等待处理时长约 2.1小时</div>
+            </div>
+            <span class="alert-time">今天 09:42</span>
+          </div>
+          <div class="alert-item p2">
+            <span class="alert-badge badge-p2">P2</span>
+            <div class="alert-content">
+              <div class="alert-title">接通率连续3日环比下滑 —— 近3日：63.1% → 61.4% → 60.0%（下滑 3.1%）</div>
+              <div class="alert-desc">建议：检查号码质量、拨打时段设置，关注是否存在号码被标记为骚扰</div>
+            </div>
+            <span class="alert-time">今天 08:00</span>
+          </div>
+          <div class="alert-item p1">
+            <span class="alert-badge badge-p1">P1</span>
+            <div class="alert-content">
+              <div class="alert-title">话单回传率低于阈值 —— 当前话单待回传 <strong>2,186</strong> 条，回传率 86.2%（阈值 85%）</div>
+              <div class="alert-desc">建议：检查外呼平台话单推送接口状态，确认是否有批量延迟未回传。其中超24h未回传 <strong>412</strong> 条，超48h未回传 <strong>87</strong> 条</div>
+            </div>
+            <span class="alert-time">今天 10:15</span>
+          </div>
+          <div class="alert-item p2">
+            <span class="alert-badge badge-p2">P2</span>
+            <div class="alert-content">
+              <div class="alert-title">话单超时未回传明细 —— 技能组A 超时 <strong>238</strong> 条，技能组B 超时 <strong>174</strong> 条</div>
+              <div class="alert-desc">建议：按技能组维度排查话单延迟原因，重点关注技能组A的接口连通性；可前往"任务明细 > 推送成功 > 话单状态：待回传"查看明细</div>
+            </div>
+            <span class="alert-time">今天 10:15</span>
+          </div>
+          <div class="alert-item ok">
+            <span class="alert-badge badge-ok">恢复</span>
+            <div class="alert-content">
+              <div class="alert-title">推送失败率异常已恢复 —— 昨日 14:30 触发，失败率一度达 7.2%，已于 16:15 恢复正常（当前 1.1%）</div>
+              <div class="alert-desc">根因：外呼平台接口超时，已由技术同学修复</div>
+            </div>
+            <span class="alert-time">昨天 16:15</span>
+          </div>
+        </div>
+      </div>
+    </div><!-- /page-body -->
+  </div><!-- /content-area -->
+</div><!-- /main-layout -->
+
+<script>
+  // Toast提示组件
+  const toastContainer = document.createElement('div');
+  toastContainer.className = 'toast-container';
+  document.body.appendChild(toastContainer);
+
+  // 指标提示内容定义
+  const metricTips = {
+    // 总览看板KPI指标
+    '人工客服任务总量': {
+      title: '人工客服任务总量',
+      content: '统计周期内所有需要人工客服外呼的任务数量，包括新创建任务和系统自动分配任务。',
+      formula: '任务总量 = 新创建任务 + 系统自动分配任务'
+    },
+    '已推送任务量': {
+      title: '已推送任务量',
+      content: '统计周期内已成功推送给外呼平台的任务数量，表示已进入外呼流程的任务。',
+      formula: '已推送任务量 = 任务总量 × 推送率'
+    },
+    '话单待回传': {
+      title: '话单待回传',
+      content: '已推送但尚未收到外呼平台回传话单的任务数量，反映外呼平台处理效率。',
+      formula: '话单待回传 = 已推送任务量 - 已回传话单量'
+    },
+    '话单超时未回传': {
+      title: '话单超时未回传',
+      content: '超过24小时/48小时未收到回传的话单数量，用于监控外呼平台异常情况。',
+      formula: '超时未回传 = 待回传任务中超过设定阈值的数量'
+    },
+    '外呼接通量': {
+      title: '外呼接通量',
+      content: '客户接听电话的通话数量，反映外呼触达效果。',
+      formula: '外呼接通量 = 已推送任务量 × 接通率'
+    },
+    '有效通话量': {
+      title: '有效通话量',
+      content: '通话时长≥30秒的通话数量，反映有效沟通情况。',
+      formula: '有效通话量 = 外呼接通量 × 有效通话率'
+    },
+    '线索到店量': {
+      title: '线索到店量',
+      content: '通过外呼成功预约并实际到店的客户数量。',
+      formula: '线索到店量 = 有效通话量 × 到店率'
+    },
+    '线索成交量': {
+      title: '线索成交量',
+      content: '通过外呼成功转化的成交客户数量。',
+      formula: '线索成交量 = 线索到店量 × 成交率'
+    },
+    '推送率': {
+      title: '推送率',
+      content: '任务成功推送给外呼平台的比例，反映系统推送效率。',
+      formula: '推送率 = 已推送任务量 ÷ 任务总量 × 100%'
+    },
+    '接通率': {
+      title: '接通率',
+      content: '客户接听电话的比例，反映电话触达效果。',
+      formula: '接通率 = 外呼接通量 ÷ 已推送任务量 × 100%'
+    },
+    '有效通话率': {
+      title: '有效通话率',
+      content: '有效通话（≥30秒）占接通通话的比例，反映通话质量。',
+      formula: '有效通话率 = 有效通话量 ÷ 外呼接通量 × 100%'
+    },
+    '到店率': {
+      title: '到店率',
+      content: '到店客户占有效通话客户的比例，反映外呼转化效果。',
+      formula: '到店率 = 线索到店量 ÷ 有效通话量 × 100%'
+    },
+    '成交率': {
+      title: '成交率',
+      content: '成交客户占到店客户的比例，反映最终转化效果。',
+      formula: '成交率 = 线索成交量 ÷ 线索到店量 × 100%'
+    },
+    // 外呼质量分析KPI指标
+    '外呼总次数': {
+      title: '外呼总次数',
+      content: '统计周期内外呼平台拨打电话的总次数，包含首次外呼和重推外呼。',
+      formula: '外呼总次数 = 首次外呼次数 + 重推外呼次数'
+    },
+    '接通次数': {
+      title: '接通次数',
+      content: '客户接听电话的总次数，反映电话触达频次。',
+      formula: '接通次数 = 外呼总次数 × 接通率'
+    },
+    '有效通话（≥30s）': {
+      title: '有效通话（≥30s）',
+      content: '通话时长≥30秒的通话总次数，反映有效沟通频次。',
+      formula: '有效通话次数 = 接通次数 × 有效通话率'
+    },
+    '平均通话时长': {
+      title: '平均通话时长',
+      content: '所有接通通话的平均时长，反映通话质量。',
+      formula: '平均通话时长 = 总通话时长 ÷ 接通次数'
+    },
+    '客户主动挂断率': {
+      title: '客户主动挂断率',
+      content: '客户主动挂断电话的比例，反映客户接受度。',
+      formula: '客户主动挂断率 = 客户主动挂断次数 ÷ 接通次数 × 100%'
+    },
+    '最优拨打时段': {
+      title: '最优拨打时段',
+      content: '接通率最高的时间段，用于指导外呼时间安排。',
+      formula: '基于历史数据统计各时段接通率，取最高值所在时段'
+    },
+    // 话单重推分析KPI指标
+    '重推触发总量': {
+      title: '重推触发总量',
+      content: '触发重推机制的任务数量，反映首次外呼未成功的情况。',
+      formula: '重推触发总量 = 满足重推条件的话单数量'
+    },
+    '重推后接通量': {
+      title: '重推后接通量',
+      content: '通过重推后接通的通话数量，反映重推效果。',
+      formula: '重推后接通量 = 重推触发总量 × 重推接通率'
+    },
+    '重推后到店': {
+      title: '重推后到店',
+      content: '通过重推后成功到店的客户数量，反映重推转化价值。',
+      formula: '重推后到店 = 重推后接通量 × 重推到店率'
+    },
+    '重推边际价值': {
+      title: '重推边际价值',
+      content: '重推带来的额外到店增量，反映重推策略的经济效益。',
+      formula: '重推边际价值 = 重推后到店量 - 首次外呼到店量（相同客户群）'
+    },
+    // 推送执行分析KPI指标
+    '应推送任务量': {
+      title: '应推送任务量',
+      content: '根据推送规则应该推送的任务数量，反映规则命中情况。',
+      formula: '应推送任务量 = 命中推送规则的任务数量'
+    },
+    '实际推送量': {
+      title: '实际推送量',
+      content: '实际成功推送给外呼平台的任务数量。',
+      formula: '实际推送量 = 应推送任务量 × 推送执行率'
+    },
+    '推送失败量': {
+      title: '推送失败量',
+      content: '推送失败的任务数量，反映系统稳定性。',
+      formula: '推送失败量 = 应推送任务量 - 实际推送量'
+    },
+    '推送P50时效': {
+      title: '推送P50时效',
+      content: '50%的任务从创建到推送成功的时间，反映推送效率中位数。',
+      formula: '统计所有成功推送任务的耗时，取中位数'
+    },
+    '推送P95时效': {
+      title: '推送P95时效',
+      content: '95%的任务从创建到推送成功的时间，反映推送效率分布。',
+      formula: '统计所有成功推送任务的耗时，取95百分位数'
+    },
+    '重复推送率': {
+      title: '重复推送率',
+      content: '同一任务被重复推送的比例，反映推送逻辑准确性。',
+      formula: '重复推送率 = 重复推送次数 ÷ 总推送次数 × 100%'
+    },
+    // 告警监控KPI指标
+    'P0 紧急告警': {
+      title: 'P0 紧急告警',
+      content: '最高优先级告警，需要立即处理，通常影响核心业务。',
+      formula: '实时监控关键指标，超过严重阈值时触发'
+    },
+    'P1 重要告警': {
+      title: 'P1 重要告警',
+      content: '重要优先级告警，需要尽快处理，可能影响业务。',
+      formula: '监控重要指标，超过警告阈值时触发'
+    },
+    'P2 提醒告警': {
+      title: 'P2 提醒告警',
+      content: '提醒级别告警，需要关注但不紧急。',
+      formula: '监控一般指标，超过提醒阈值时触发'
+    },
+    '今日已恢复': {
+      title: '今日已恢复',
+      content: '今日已自动或手动恢复的告警数量。',
+      formula: '统计今日告警状态从"触发"变为"恢复"的数量'
+    },
+    // 表格指标
+    '任务量': {
+      title: '任务量',
+      content: '该维度下的任务总数量。',
+      formula: '任务量 = 统计该维度下所有任务的数量'
+    },
+    '占比': {
+      title: '占比',
+      content: '该维度任务量占总任务量的比例。',
+      formula: '占比 = 该维度任务量 ÷ 总任务量 × 100%'
+    },
+    '已推送量': {
+      title: '已推送量',
+      content: '该维度下已成功推送的任务数量。',
+      formula: '已推送量 = 该维度任务量 × 推送率'
+    },
+    '话单待回传': {
+      title: '话单待回传',
+      content: '该维度下已推送但未回传话单的任务数量。',
+      formula: '话单待回传 = 该维度已推送量 - 已回传量'
+    },
+    '成交量': {
+      title: '成交量',
+      content: '该维度下成功转化的客户数量。',
+      formula: '成交量 = 该维度到店量 × 成交率'
+    },
+    '平均通话时长': {
+      title: '平均通话时长',
+      content: '该维度下通话的平均时长。',
+      formula: '平均通话时长 = 总通话时长 ÷ 接通次数'
+    },
+    '有效通话率': {
+      title: '有效通话率',
+      content: '该维度下有效通话的比例。',
+      formula: '有效通话率 = 有效通话量 ÷ 接通量 × 100%'
+    },
+    '积压量': {
+      title: '积压量',
+      content: '该维度下待处理的任务积压数量。',
+      formula: '积压量 = 待分配任务 + 待推送任务'
+    },
+    '重推执行量': {
+      title: '重推执行量',
+      content: '该话单状态下执行重推的次数。',
+      formula: '重推执行量 = 满足重推条件且已执行重推的次数'
+    },
+    '重推后接通率': {
+      title: '重推后接通率',
+      content: '重推后接通的电话比例。',
+      formula: '重推后接通率 = 重推后接通量 ÷ 重推执行量 × 100%'
+    },
+    '执行率': {
+      title: '执行率',
+      content: '技能组接收并执行推送任务的比例。',
+      formula: '执行率 = 实际执行量 ÷ 推送接收量 × 100%'
+    },
+    '待回传率': {
+      title: '待回传率',
+      content: '待回传话单占已推送任务的比例。',
+      formula: '待回传率 = 待回传量 ÷ 已推送量 × 100%'
+    },
+    // SmartCode分析表格指标
+    'SmartCode': {
+      title: 'SmartCode',
+      content: '智能代码标识，用于追踪不同渠道、不同投放策略的线索来源。',
+      formula: '唯一标识符，格式为: 渠道_类型_序号'
+    },
+    '渠道': {
+      title: '渠道',
+      content: '线索来源渠道，如百度SEM、抖音信息流等。',
+      formula: '根据线索来源平台自动识别'
+    },
+    '接通量': {
+      title: '接通量',
+      content: '该维度下客户接听电话的数量。',
+      formula: '接通量 = 该维度已推送量 × 接通率'
+    },
+    // 外呼质量分析表格指标
+    '原因': {
+      title: '原因',
+      content: '未接通或通话质量不佳的具体原因分类。',
+      formula: '根据话单状态自动归类'
+    },
+    '次数': {
+      title: '次数',
+      content: '该原因出现的频次。',
+      formula: '统计该原因出现的总次数'
+    },
+    '趋势': {
+      title: '趋势',
+      content: '与前一周期相比的变化趋势。',
+      formula: '趋势 = (本期次数 - 上期次数) ÷ 上期次数 × 100%'
+    },
+    '中位数': {
+      title: '中位数',
+      content: '通话时长的中间值，反映典型通话时长。',
+      formula: '将所有通话时长排序，取中间位置的值'
+    },
+    // 话单重推分析表格指标
+    '话单状态': {
+      title: '话单状态',
+      content: '外呼后的通话状态分类，如无人接听、主动挂断等。',
+      formula: '根据外呼平台回传状态自动识别'
+    },
+    '触发次数': {
+      title: '触发次数',
+      content: '该话单状态下触发重推的次数。',
+      formula: '统计该状态下满足重推条件的话单数量'
+    },
+    // 后链路转化表格指标
+    '指标': {
+      title: '指标',
+      content: '对比分析的具体指标名称。',
+      formula: '预定义的分析维度'
+    },
+    '外呼接通组': {
+      title: '外呼接通组',
+      content: '外呼且接通的客户组数据。',
+      formula: '实验组数据'
+    },
+    '对照组（未外呼）': {
+      title: '对照组（未外呼）',
+      content: '未进行外呼的客户组数据，用于对比分析。',
+      formula: '对照组数据'
+    },
+    '提升量': {
+      title: '提升量',
+      content: '外呼组相对于对照组的绝对提升值。',
+      formula: '提升量 = 外呼组值 - 对照组值'
+    },
+    '提升率': {
+      title: '提升率',
+      content: '外呼组相对于对照组的相对提升比例。',
+      formula: '提升率 = (外呼组值 - 对照组值) ÷ 对照组值 × 100%'
+    },
+    '通话时长区间': {
+      title: '通话时长区间',
+      content: '通话时长的分段区间。',
+      formula: '按通话时长划分的区间，如0-30s、30-60s等'
+    },
+    // 配置规则效果表格指标
+    '规则ID': {
+      title: '规则ID',
+      content: '推送规则的唯一标识符。',
+      formula: '系统自动生成的规则编号'
+    },
+    '规则类型': {
+      title: '规则类型',
+      content: '规则的类型分类，如时效规则、重推规则等。',
+      formula: '根据规则作用范围自动分类'
+    },
+    '规则值': {
+      title: '规则值',
+      content: '规则的具体参数值。',
+      formula: '规则配置的阈值或条件'
+    },
+    '绑定技能组': {
+      title: '绑定技能组',
+      content: '规则绑定的外呼技能组。',
+      formula: '配置规则时指定的目标技能组'
+    },
+    '创建时间': {
+      title: '创建时间',
+      content: '规则创建的时间。',
+      formula: '规则配置提交的时间戳'
+    },
+    '状态': {
+      title: '状态',
+      content: '规则的当前状态，如启用、停用等。',
+      formula: '根据规则生效状态显示'
+    },
+    '命中量(近7日)': {
+      title: '命中量(近7日)',
+      content: '近7日内被该规则命中的任务数量。',
+      formula: '统计近7日符合规则条件的任务数量'
+    },
+    '推送执行率': {
+      title: '推送执行率',
+      content: '命中规则的任务中成功推送的比例。',
+      formula: '推送执行率 = 实际推送量 ÷ 命中量 × 100%'
+    },
+    '效果评级': {
+      title: '效果评级',
+      content: '规则效果的评估等级，如A、B、C等。',
+      formula: '根据接通率、到店率等综合指标评级'
+    },
+    // 推送执行分析表格指标
+    '失败原因': {
+      title: '失败原因',
+      content: '推送失败的具体原因。',
+      formula: '系统错误日志分类'
+    },
+    '命中规则数': {
+      title: '命中规则数',
+      content: '任务同时命中的规则数量。',
+      formula: '统计任务符合的规则数量'
+    },
+    '平均推送率': {
+      title: '平均推送率',
+      content: '命中多个规则的任务的平均推送率。',
+      formula: '平均推送率 = Σ(各规则推送率) ÷ 规则数量'
+    },
+    // 趋势图指标
+    '任务量': {
+      title: '任务量',
+      content: '每日需要人工客服外呼的任务数量趋势。',
+      formula: '按日统计任务创建数量'
+    },
+    '推送量': {
+      title: '推送量',
+      content: '每日成功推送给外呼平台的任务数量趋势。',
+      formula: '按日统计成功推送任务数量'
+    },
+    '接通量': {
+      title: '接通量',
+      content: '每日客户接听电话的通话数量趋势。',
+      formula: '按日统计接通通话数量'
+    },
+    '到店量': {
+      title: '到店量',
+      content: '每日通过外呼成功到店的客户数量趋势。',
+      formula: '按日统计到店客户数量'
+    }
+  };
+
+  // Toast显示函数（同一指标只保留一个）
+  function showToast(title, content, formula, type = 'info') {
+    // 移除已存在的同名Toast，避免重复
+    const existing = toastContainer.querySelector(`[data-toast-key="${CSS.escape(title)}"]`);
+    if (existing) {
+      existing.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.dataset.toastKey = title;
+    
+    // 定义不同类型图标的SVG
+    let iconSvg = '';
+    if (type === 'success') {
+      iconSvg = '<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.5 4.5L6 12L2.5 8.5" stroke="#52c41a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    } else if (type === 'warning') {
+      iconSvg = '<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 4L8 9" stroke="#fa8c16" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="12" r="1" fill="#fa8c16"/></svg>';
+    } else if (type === 'error') {
+      iconSvg = '<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4L12 12M12 4L4 12" stroke="#ff4d4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    } else {
+      iconSvg = '<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 12V8" stroke="#1677ff" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="5" r="1" fill="#1677ff"/></svg>';
+    }
+    
+    toast.innerHTML = `
+      <div class="toast-icon">${iconSvg}</div>
+      <div class="toast-content-wrapper">
+        <div class="toast-header">
+          <div class="toast-title">${title}</div>
+          <button class="toast-close" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+        </div>
+        <div class="toast-content">${content}</div>
+        ${formula ? `<div class="toast-formula">计算公式：${formula}</div>` : ''}
+      </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // 自动移除（6秒后）
+    const timer = setTimeout(() => {
+      if (toast.parentElement) toast.remove();
+    }, 6000);
+    
+    // 手动关闭时也清除定时器
+    toast.querySelector('.toast-close').addEventListener('click', () => clearTimeout(timer));
+  }
+
+  // 为元素添加点击提示（防止重复绑定）
+  function addTooltip(element, metricName) {
+    if (!element || !metricTips[metricName]) return;
+    // 已绑定过则跳过，避免切Tab时重复绑定多个事件
+    if (element.dataset.tooltipBound === 'true') return;
+    element.dataset.tooltipBound = 'true';
+
+    element.classList.add('with-tooltip');
+    element.title = '点击查看计算公式';
+    
+    element.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tip = metricTips[metricName];
+      showToast(tip.title, tip.content, tip.formula);
+    });
+  }
+
+  // 初始化指标提示
+  function initMetricTooltips() {
+    // 为所有KPI卡片添加提示
+    document.querySelectorAll('.kpi-title').forEach(titleEl => {
+      const metricName = titleEl.textContent.trim();
+      if (metricTips[metricName]) {
+        addTooltip(titleEl, metricName);
+      }
+    });
+
+    // 为所有表格表头添加提示
+    document.querySelectorAll('th').forEach(thEl => {
+      const metricName = thEl.textContent.trim();
+      if (metricTips[metricName]) {
+        addTooltip(thEl, metricName);
+      }
+    });
+
+    // 为KPI值添加提示（通过父元素）
+    document.querySelectorAll('.kpi-card').forEach(card => {
+      const titleEl = card.querySelector('.kpi-title');
+      if (titleEl) {
+        const metricName = titleEl.textContent.trim();
+        const valueEl = card.querySelector('.kpi-value');
+        if (valueEl && metricTips[metricName]) {
+          addTooltip(valueEl, metricName);
+        }
+      }
+    });
+
+    // 为指标率值添加提示
+    document.querySelectorAll('.kpi-rate').forEach(rateEl => {
+      // 查找最近的KPI卡片
+      const card = rateEl.closest('.kpi-card');
+      if (card) {
+        const titleEl = card.querySelector('.kpi-title');
+        if (titleEl) {
+          const metricName = titleEl.textContent.trim();
+          if (metricTips[metricName]) {
+            addTooltip(rateEl, metricName);
+          }
+        }
+      }
+    });
+
+    // 为表格中的百分比指标添加提示
+    document.querySelectorAll('.data-table td').forEach(tdEl => {
+      const text = tdEl.textContent.trim();
+      // 检查是否为百分比格式
+      if (text.endsWith('%') && text.length > 1) {
+        // 查找表头对应的指标
+        const thIndex = Array.from(tdEl.parentElement.children).indexOf(tdEl);
+        const thRow = tdEl.closest('table').querySelector('thead tr');
+        if (thRow && thRow.children[thIndex]) {
+          const metricName = thRow.children[thIndex].textContent.trim();
+          if (metricTips[metricName]) {
+            addTooltip(tdEl, metricName);
+          }
+        }
+      }
+    });
+
+    // 为趋势图tab添加提示
+    document.querySelectorAll('.trend-tab').forEach(tabEl => {
+      const metricName = tabEl.textContent.trim();
+      if (metricTips[metricName]) {
+        addTooltip(tabEl, metricName);
+      }
+    });
+  }
+
+  // 页面加载完成后初始化
+  document.addEventListener('DOMContentLoaded', initMetricTooltips);
+  
+  // 测试函数：显示所有类型的Toast示例
+  function testToastExamples() {
+    console.log('测试Toast提示功能...');
+    
+    // 信息类型
+    showToast(
+      '信息提示',
+      '这是信息类型的Toast提示，用于显示一般性信息说明。',
+      '无特定计算公式',
+      'info'
+    );
+    
+    // 成功类型
+    setTimeout(() => {
+      showToast(
+        '成功提示',
+        '这是成功类型的Toast提示，用于显示操作成功的确认信息。',
+        '无特定计算公式',
+        'success'
+      );
+    }, 700);
+    
+    // 警告类型
+    setTimeout(() => {
+      showToast(
+        '警告提示',
+        '这是警告类型的Toast提示，用于显示需要注意或可能存在的问题。',
+        '无特定计算公式',
+        'warning'
+      );
+    }, 1400);
+    
+    // 错误类型
+    setTimeout(() => {
+      showToast(
+        '错误提示',
+        '这是错误类型的Toast提示，用于显示错误或失败的操作信息。',
+        '无特定计算公式',
+        'error'
+      );
+    }, 2100);
+    
+    // 实际指标示例
+    setTimeout(() => {
+      showToast(
+        '推送率',
+        '任务成功推送给外呼平台的比例，反映系统推送效率。',
+        '推送率 = 已推送任务量 ÷ 任务总量 × 100%'
+      );
+    }, 2800);
+  }
+
+  // Tab 切换
+  function switchTab(name) {
+    // 更新tab高亮
+    document.querySelectorAll('#main-tabs .tab-item').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    // 更新面板
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    // 更新页面标题
+    const titles = {
+      overview: '预外呼效果报表 - 总览看板',
+      sc: '预外呼效果报表 - SmartCode分析',
+      channel: '预外呼效果报表 - SC渠道分析',
+      status: '预外呼效果报表 - 线索状态分析',
+      quality: '预外呼效果报表 - 外呼质量分析',
+      redial: '预外呼效果报表 - 话单重推分析',
+      skillgroup: '预外呼效果报表 - 技能组分析',
+      alert: '预外呼效果报表 - 告警监控',
+    };
+    document.querySelector('.sys-header .sys-title').textContent = titles[name] || '预外呼效果报表';
+    
+    // 初始化新Tab中的指标提示
+    setTimeout(initMetricTooltips, 100);
+  }
+
+  // 核心指标趋势 Tab 切换
+  let currentTrend = 'task';
+  const trendConfig = {
+    task:    { color: '#1677ff', label: '任务量', yMax: 2000 },
+    push:    { color: '#52c41a', label: '推送量', yMax: 1800 },
+    connect: { color: '#13c2c2', label: '接通量', yMax: 1200 },
+    visit:   { color: '#fa8c16', label: '到店量', yMax: 600  },
+  };
+  function switchTrend(key) {
+    if (key === currentTrend) return;
+    currentTrend = key;
+    const cfg = trendConfig[key];
+
+    // 更新 Tab 样式
+    document.querySelectorAll('.trend-tab').forEach(tab => {
+      const isActive = tab.dataset.key === key;
+      tab.style.color = isActive ? cfg.color : '#999';
+      tab.style.borderBottom = isActive ? '2px solid ' + cfg.color : '2px solid transparent';
+      tab.style.fontWeight = isActive ? '600' : '400';
+      if (isActive) tab.classList.add('active');
+      else tab.classList.remove('active');
+    });
+
+    // 隐藏所有折线和面积，显示选中项
+    ['task', 'push', 'connect', 'visit'].forEach(k => {
+      const line = document.getElementById('line-' + k);
+      const area = document.getElementById('area-' + k);
+      if (k === key) {
+        line.style.opacity = '1';
+        line.style.transition = 'opacity 0.4s ease';
+        area.style.opacity = '1';
+        area.style.transition = 'opacity 0.4s ease';
+      } else {
+        line.style.opacity = '0';
+        line.style.transition = 'opacity 0.3s ease';
+        area.style.opacity = '0';
+        area.style.transition = 'opacity 0.3s ease';
+      }
+    });
+
+    // 更新 Y 轴刻度
+    const step = cfg.yMax / 4;
+    document.getElementById('trend-y1').textContent = cfg.yMax;
+    document.getElementById('trend-y2').textContent = Math.round(cfg.yMax * 3 / 4);
+    document.getElementById('trend-y3').textContent = Math.round(cfg.yMax / 2);
+    document.getElementById('trend-y4').textContent = Math.round(cfg.yMax / 4);
+  }
+
+  // 侧边栏展开/折叠
+  function toggleGroup(el, forceOpen) {
+    const sub = el.nextElementSibling;
+    if (!sub || !sub.classList.contains('nav-sub')) return;
+    const arrow = el.querySelector('.arrow');
+    const isOpen = sub.style.display !== 'none';
+    if (forceOpen) {
+      sub.style.display = 'block';
+      if (arrow) arrow.classList.add('open');
+    } else {
+      sub.style.display = isOpen ? 'none' : 'block';
+      if (arrow) arrow.classList.toggle('open', !isOpen);
+    }
+  }
+
+  // 设置侧栏激活
+  function setActive(el) {
+    document.querySelectorAll('.nav-sub .nav-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // 规则类型筛选切换
+  function setRuleType(el) {
+    document.querySelectorAll('.rule-type-tag').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // 重置按钮
+  function resetFilters() {
+    document.querySelectorAll('.filter-input').forEach(i => i.value = '');
+    document.querySelectorAll('.filter-select').forEach(s => s.selectedIndex = 0);
+  }
+
+  // 初始化：展开统计报表
+  document.getElementById('stat-sub').style.display = 'block';
+  
+  // 初始化指标提示
+  initMetricTooltips();
+</script>
+</body>
+</html>
