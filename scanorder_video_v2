@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>扫码下单操作手册 — 产品演示视频</title>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #0052CC;
+  --primary-light: #0066FF;
+  --accent: #FF5630;
+  --success: #00875A;
+  --warn: #FF8B00;
+  --bg-dark: #0A0E1A;
+  --bg-panel: #121828;
+  --bg-card: #1A2235;
+  --text-main: #E8EBF2;
+  --text-sub: #8B96A8;
+  --border: rgba(255,255,255,0.08);
+  --slide-w: 1280px;
+  --slide-h: 720px;
+}
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg-dark);
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+  color: var(--text-main);
+  overflow: hidden;
+}
+
+/* ===== OUTER SHELL ===== */
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+/* ===== STAGE ===== */
+#stage-wrap {
+  position: relative;
+  width: 100%;
+  max-width: var(--slide-w);
+  aspect-ratio: 16/9;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06);
+}
+#stage {
+  position: absolute;
+  inset: 0;
+}
+
+/* ===== SLIDES ===== */
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+}
+.slide.active {
+  opacity: 1;
+  pointer-events: all;
+}
+.slide.exit {
+  opacity: 0;
+}
+
+/* ===== SLIDE BG TYPES ===== */
+.slide-dark { background: var(--bg-dark); }
+.slide-light { background: #F4F6FA; color: #1A2235; }
+.slide-cover {
+  background: linear-gradient(135deg, #0A0E1A 0%, #0D1B3E 50%, #051025 100%);
+}
+
+/* ===== COVER SLIDE ===== */
+.cover-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.cover-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,82,204,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,82,204,0.08) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridDrift 20s linear infinite;
+}
+@keyframes gridDrift {
+  0% { transform: translate(0,0); }
+  100% { transform: translate(60px, 60px); }
+}
+.cover-glow {
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,82,204,0.25) 0%, transparent 70%);
+  top: 50%; left: 30%;
+  transform: translate(-50%, -50%);
+  animation: glowPulse 4s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+}
+.cover-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  height: 100%;
+  align-items: center;
+  padding: 0 80px;
+}
+.cover-left { flex: 1; }
+.cover-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,82,204,0.2);
+  border: 1px solid rgba(0,82,204,0.4);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: #7BA3FF;
+  margin-bottom: 28px;
+  letter-spacing: 0.5px;
+  opacity: 0;
+  animation: fadeUp 0.8s 0.3s forwards;
+}
+.cover-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #7BA3FF;
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.cover-title {
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  opacity: 0;
+  animation: fadeUp 0.8s 0.5s forwards;
+}
+.cover-title em {
+  font-style: normal;
+  color: #4A90FF;
+  position: relative;
+}
+.cover-title em::after {
+  content: '';
+  position: absolute;
+  bottom: 4px; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0052CC, #4A90FF);
+  border-radius: 2px;
+}
+.cover-subtitle {
+  font-size: 18px;
+  color: var(--text-sub);
+  margin-top: 20px;
+  letter-spacing: 0.3px;
+  opacity: 0;
+  animation: fadeUp 0.8s 0.7s forwards;
+}
+.cover-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 36px;
+  opacity: 0;
+  animation: fadeUp 0.8s 0.9s forwards;
+}
+.cover-tag {
+  padding: 8px 20px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 14px;
+  color: #C8D0E0;
+}
+.cover-right {
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  opacity: 0;
+  animation: fadeLeft 0.8s 1.1s forwards;
+}
+.cover-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 14px 20px;
+  transition: all 0.3s;
+}
+.cover-menu-item:hover {
+  background: rgba(0,82,204,0.15);
+  border-color: rgba(0,82,204,0.3);
+  transform: translateX(4px);
+}
+.cover-menu-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(0,82,204,0.3);
+  border: 1px solid rgba(0,82,204,0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #7BA3FF;
+  flex-shrink: 0;
+}
+.cover-menu-text { font-size: 14px; color: var(--text-main); }
+.cover-menu-desc { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeLeft {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ===== CONTENT SLIDE LAYOUT ===== */
+.cs-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.cs-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 48px 0;
+  flex-shrink: 0;
+}
+.cs-part-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--primary-light);
+  background: rgba(0,82,204,0.15);
+  border: 1px solid rgba(0,82,204,0.3);
+  border-radius: 4px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.cs-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-main);
+  flex: 1;
+}
+.slide-light .cs-title { color: #0A1628; }
+.cs-divider {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0,82,204,0.6) 0%, rgba(0,82,204,0.1) 60%, transparent 100%);
+  margin: 14px 48px 0;
+}
+.cs-body {
+  flex: 1;
+  padding: 20px 48px 20px;
+  overflow: hidden;
+  display: flex;
+  gap: 28px;
+}
+
+/* ===== STEP CARDS ===== */
+.steps-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+.step-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.5s;
+}
+.slide-light .step-card {
+  background: #fff;
+  border-color: #E2E8F0;
+}
+.step-card.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+.step-num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.step-content { flex: 1; min-width: 0; }
+.step-title {
+  font-size: 14px; font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+.slide-light .step-title { color: #0A1628; }
+.step-desc {
+  font-size: 12px;
+  color: var(--text-sub);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+/* ===== SCREENSHOT PANEL ===== */
+.screenshot-panel {
+  width: 380px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all 0.6s 0.3s;
+}
+.screenshot-panel.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+.screenshot-frame {
+  flex: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #000;
+  position: relative;
+}
+.screenshot-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.screenshot-label {
+  font-size: 11px;
+  color: var(--text-sub);
+  text-align: center;
+  padding: 4px;
+}
+
+/* ===== INFO BLOCKS ===== */
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.4s;
+}
+.slide-light .info-row {
+  background: #fff;
+  border-color: #E2E8F0;
+}
+.info-row.visible { opacity: 1; transform: translateY(0); }
+.info-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.info-text { font-size: 13px; line-height: 1.6; color: var(--text-main); }
+.slide-light .info-text { color: #2D3748; }
+.info-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary-light);
+  display: block;
+  margin-bottom: 3px;
+}
+
+/* ===== NOTICE BOX ===== */
+.notice-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(0,82,204,0.1);
+  border: 1px solid rgba(0,82,204,0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #7BA3FF;
+  line-height: 1.6;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.5s 1.2s;
+}
+.notice-box.visible { opacity: 1; }
+.notice-box.warn {
+  background: rgba(255,139,0,0.1);
+  border-color: rgba(255,139,0,0.3);
+  color: #FFAB40;
+}
+.notice-icon { font-size: 16px; flex-shrink: 0; }
+
+/* ===== COLUMNS LAYOUT ===== */
+.cols-3 {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+}
+.col-block {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 16px;
+  opacity: 0;
+  transform: translateY(15px);
+  transition: all 0.5s;
+}
+.slide-light .col-block { background: #fff; border-color: #E2E8F0; }
+.col-block.visible { opacity: 1; transform: translateY(0); }
+.col-icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+  display: block;
+}
+.col-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(0,82,204,0.3);
+}
+.slide-light .col-title { color: #0A1628; }
+.col-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-sub);
+  line-height: 1.55;
+}
+.slide-light .col-item { color: #4A5568; }
+.col-item::before {
+  content: '•';
+  color: var(--primary-light);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ===== STEP FLOW (STEP 2 col) ===== */
+.flow-steps {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+  flex: 1;
+}
+.flow-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(15px);
+  transition: all 0.5s;
+}
+.flow-step.visible { opacity: 1; transform: translateY(0); }
+.flow-step-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(0,82,204,0.3), rgba(0,102,255,0.15));
+  border: 2px solid rgba(0,82,204,0.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  position: relative;
+}
+.flow-arrow {
+  flex: 0 0 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 16px;
+  color: var(--text-sub);
+  font-size: 18px;
+}
+.flow-step-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  text-align: center;
+}
+.slide-light .flow-step-title { color: #0A1628; }
+.flow-step-desc {
+  font-size: 11px;
+  color: var(--text-sub);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ===== STEP BRANCHES ===== */
+.branches-layout {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+}
+.branch-col { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.branch-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--primary-light);
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0,82,204,0.2);
+  margin-bottom: 4px;
+}
+.branch-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.4s;
+}
+.slide-light .branch-card { background: #fff; border-color: #E2E8F0; }
+.branch-card.visible { opacity: 1; transform: translateY(0); }
+.branch-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-sub);
+  margin-bottom: 6px;
+}
+.branch-result {
+  font-size: 12.5px;
+  color: var(--text-main);
+  line-height: 1.65;
+}
+.slide-light .branch-result { color: #2D3748; }
+.branch-result .opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0,82,204,0.1);
+  border-radius: 4px;
+  padding: 1px 7px;
+  color: var(--primary-light);
+  font-size: 12px;
+  margin: 2px 0;
+}
+.branch-result .opt-warn {
+  background: rgba(255,139,0,0.1);
+  color: #FFAB40;
+}
+
+/* ===== TABLE-LIKE ROWS ===== */
+.field-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.field-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(-15px);
+  transition: all 0.4s;
+}
+.slide-light .field-row { background: #fff; border-color: #E2E8F0; }
+.field-row.visible { opacity: 1; transform: translateX(0); }
+.field-name {
+  width: 110px;
+  flex-shrink: 0;
+  background: rgba(0,82,204,0.12);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--primary-light);
+  display: flex;
+  align-items: center;
+  line-height: 1.4;
+}
+.slide-light .field-name { background: rgba(0,82,204,0.06); color: var(--primary); }
+.field-required {
+  font-size: 10px;
+  color: #FF5630;
+  display: block;
+  margin-top: 2px;
+}
+.field-desc {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+.slide-light .field-desc { color: #4A5568; }
+
+/* ===== ORDER CONFIRM TABLE ===== */
+.order-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+.order-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  opacity: 0;
+  transition: all 0.35s;
+  transform: translateY(8px);
+}
+.slide-light .order-row { border-color: #E2E8F0; }
+.order-row.visible { opacity: 1; transform: translateY(0); }
+.order-key {
+  width: 130px;
+  flex-shrink: 0;
+  background: rgba(0,82,204,0.1);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-light);
+  display: flex;
+  align-items: center;
+}
+.slide-light .order-key { background: #EEF2FF; color: var(--primary); }
+.order-val {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-sub);
+  line-height: 1.55;
+  background: var(--bg-card);
+}
+.slide-light .order-val { background: #fff; color: #4A5568; }
+
+/* ===== SUMMARY SLIDE ===== */
+.summary-slide {
+  background: linear-gradient(160deg, #0A0E1A 0%, #0D1B3E 100%);
+}
+.summary-flow {
+  display: flex;
+  gap: 0;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 0 48px;
+}
+.summary-item {
+  flex: 1;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s;
+  padding: 0 8px;
+}
+.summary-item.visible { opacity: 1; transform: translateY(0); }
+.summary-circle {
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(0,82,204,0.4), rgba(0,102,255,0.2));
+  border: 2px solid rgba(0,82,204,0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  margin: 0 auto 12px;
+  position: relative;
+}
+.summary-circle-num {
+  position: absolute;
+  top: -4px; right: -4px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--primary);
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.summary-arrow {
+  flex: 0 0 28px;
+  text-align: center;
+  color: rgba(0,82,204,0.6);
+  font-size: 20px;
+  padding-bottom: 20px;
+}
+.summary-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+.summary-desc {
+  font-size: 11px;
+  color: var(--text-sub);
+  line-height: 1.5;
+}
+.summary-footer {
+  text-align: center;
+  padding: 16px 48px 20px;
+  font-size: 13px;
+  color: var(--text-sub);
+  opacity: 0;
+  transition: opacity 0.5s 2s;
+}
+.summary-footer.visible { opacity: 1; }
+
+/* ===== QR SECTION (Slide 11) ===== */
+.qr-slide-body {
+  flex: 1;
+  display: flex;
+  gap: 28px;
+  padding: 16px 48px 20px;
+  overflow: hidden;
+}
+.qr-steps { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.qr-path-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,82,204,0.1);
+  border: 1px solid rgba(0,82,204,0.25);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #7BA3FF;
+  flex-shrink: 0;
+}
+.qr-path-sep { color: rgba(0,82,204,0.4); }
+
+/* ===== SUBTITLE / NARRATION BAR ===== */
+#subtitle-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
+  padding: 24px 48px 16px;
+  pointer-events: none;
+  z-index: 100;
+  transition: opacity 0.4s;
+}
+.subtitle-text {
+  font-size: 18px;
+  font-weight: 400;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  line-height: 1.6;
+  letter-spacing: 0.3px;
+  text-align: center;
+  min-height: 28px;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.subtitle-text.visible { opacity: 1; }
+
+/* ===== CONTROLS ===== */
+#controls {
+  width: 100%;
+  max-width: var(--slide-w);
+  padding: 12px 0 0;
+}
+.progress-wrap {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s linear;
+}
+.progress-chapters {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  pointer-events: none;
+}
+.chapter-mark {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: rgba(255,255,255,0.3);
+}
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ctrl-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 15px;
+  cursor: pointer;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.ctrl-btn:hover { background: rgba(0,82,204,0.25); border-color: rgba(0,82,204,0.4); }
+.ctrl-btn.primary-btn {
+  width: 40px; height: 40px;
+  background: var(--primary);
+  border-color: var(--primary-light);
+  font-size: 18px;
+}
+.ctrl-btn.primary-btn:hover { background: var(--primary-light); }
+.time-display {
+  font-size: 13px;
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+  min-width: 80px;
+}
+.slide-counter {
+  font-size: 13px;
+  color: var(--text-sub);
+  margin-left: auto;
+}
+.chapter-list {
+  display: flex;
+  gap: 6px;
+  margin-left: 12px;
+  flex-wrap: wrap;
+}
+.chapter-pill {
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 11px;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.chapter-pill:hover, .chapter-pill.active {
+  background: rgba(0,82,204,0.2);
+  border-color: rgba(0,82,204,0.4);
+  color: #7BA3FF;
+}
+
+/* ===== TRANSITIONS ===== */
+.slide-enter { animation: slideEnter 0.6s ease forwards; }
+.slide-leave { animation: slideLeave 0.4s ease forwards; }
+@keyframes slideEnter {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slideLeave {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.02); }
+}
+
+/* ===== LIGHT SLIDE OVERRIDES ===== */
+.slide-light .cs-part-badge {
+  color: var(--primary);
+  background: rgba(0,82,204,0.08);
+  border-color: rgba(0,82,204,0.2);
+}
+.slide-light .cs-divider {
+  background: linear-gradient(90deg, rgba(0,82,204,0.4) 0%, rgba(0,82,204,0.06) 60%, transparent 100%);
+}
+.slide-light .step-desc { color: #718096; }
+.slide-light .screenshot-label { color: #718096; }
+.slide-light .branch-label { color: #718096; }
+.slide-light .notice-box { background: rgba(0,82,204,0.06); }
+
+/* ===== WATERMARK ===== */
+.watermark {
+  position: absolute;
+  bottom: 52px; right: 16px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.15);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  z-index: 50;
+}
+.slide-light .watermark { color: rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage-wrap">
+    <div id="stage"></div>
+
+    <!-- Subtitle bar -->
+    <div id="subtitle-bar">
+      <div class="subtitle-text" id="subtitle"></div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <!-- Progress bar -->
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-fill" id="progress-fill"></div>
+      <div class="progress-chapters" id="chapter-marks"></div>
+    </div>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="btn-prev" title="上一页">&#9664;</button>
+      <button class="ctrl-btn primary-btn" id="btn-play" title="播放/暂停">&#9654;</button>
+      <button class="ctrl-btn" id="btn-next" title="下一页">&#9654;&#9654;</button>
+      <div class="time-display" id="time-display">00:00 / 00:00</div>
+      <div class="chapter-list" id="chapter-list"></div>
+      <div class="slide-counter" id="slide-counter">1 / 13</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA: SLIDES
+// ============================================================
+const ASSETS = 'scanorder_assets_v2/';
+
+const slides = [
+  // ========== SLIDE 1: COVER ==========
+  {
+    id: 'cover',
+    chapter: '封面',
+    duration: 8000,
+    narrations: [
+      { time: 0, text: '欢迎使用南方商城扫码下单操作手册。' },
+      { time: 2500, text: '本手册适用于服务顾问、门店管理员及前端操作人员。' },
+      { time: 5500, text: '我们将带您完整了解从后台配置到B端接单的全流程操作。' },
+    ],
+    render: () => `
+      <div class="slide slide-cover" style="position:absolute;inset:0;">
+        <div class="cover-bg">
+          <div class="cover-grid"></div>
+          <div class="cover-glow"></div>
+        </div>
+        <div class="cover-content">
+          <div class="cover-left">
+            <div class="cover-badge">南方商城 · 产品操作手册</div>
+            <div class="cover-title">扫码<em>下单</em><br>操作手册</div>
+            <div class="cover-subtitle">保养推荐页 · 扫码下单全流程指引</div>
+            <div class="cover-tags">
+              <span class="cover-tag">🧑‍💼 服务顾问</span>
+              <span class="cover-tag">🏪 门店管理员</span>
+              <span class="cover-tag">📱 前端操作人员</span>
+            </div>
+          </div>
+          <div class="cover-right">
+            ${[
+              ['01','后台配置','专题页配置 · 组件设置 · 商品关联'],
+              ['02','小程序操作','首页结构 · 商品切换 · 规格选择'],
+              ['03','订单提交','确认信息 · 三步校验 · 到店服务'],
+              ['04','B端接单','工单入口 · PAD端操作'],
+            ].map(([n, t, d]) => `
+              <div class="cover-menu-item">
+                <div class="cover-menu-num">${n}</div>
+                <div>
+                  <div class="cover-menu-text">${t}</div>
+                  <div class="cover-menu-desc">${d}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="watermark">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 2: 目录 ==========
+  {
+    id: 'toc',
+    chapter: '目录',
+    duration: 7000,
+    narrations: [
+      { time: 0, text: '本手册共分为六大部分。' },
+      { time: 2000, text: '涵盖后台配置、小程序操作、商品管理、购物车、订单提交，以及B端工单接单。' },
+      { time: 5000, text: '现在，让我们从后台配置开始，逐步了解每个操作环节。' },
+    ],
+    render: () => `
+      <div class="slide slide-dark cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">CONTENTS</div>
+          <div class="cs-title">目录 — 操作流程总览</div>
+        </div>
+        <div class="cs-divider"></div>
+        <div class="cs-body" style="gap:20px;padding-top:22px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;">
+            ${[
+              ['01','后台配置','专题页配置 · 组件设置 · 商品关联 · 保存发布','⚙️'],
+              ['02','小程序首页','页面结构 · 车辆信息 · 商品列表 · 角标说明','📱'],
+              ['03','商品操作','切换车辆 · 更换商品 · 切换规格','🔄'],
+              ['04','购物车','加入购物车 · 修改数量 · 删除商品 · 预估金额','🛒'],
+              ['05','提交订单','订单确认 · 报修人信息 · 库存校验 · 到店服务','📋'],
+              ['06','B端工单接单','工单入口 · 接单操作','🖥️'],
+            ].map(([n, t, d, ic], i) => `
+              <div class="col-block toc-item" data-delay="${i * 120}" style="padding:14px 16px;display:flex;gap:14px;align-items:center;">
+                <div style="width:40px;height:40px;border-radius:10px;background:rgba(0,82,204,0.2);border:1px solid rgba(0,82,204,0.3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${ic}</div>
+                <div>
+                  <div style="font-size:11px;color:var(--primary-light);font-weight:700;margin-bottom:3px;">第 ${n} 部分</div>
+                  <div style="font-size:14px;font-weight:700;color:var(--text-main);margin-bottom:3px;">${t}</div>
+                  <div style="font-size:11px;color:var(--text-sub);">${d}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="watermark">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 3: 后台配置 步骤1-4 ==========
+  {
+    id: 'backend-1',
+    chapter: '后台配置',
+    duration: 12000,
+    narrations: [
+      { time: 0, text: '第一部分：后台配置。首先，我们需要在管理后台完成扫码下单页面的设置。' },
+      { time: 3000, text: '步骤一：使用账号登录南方商城管理后台。' },
+      { time: 5000, text: '步骤二：依次点击【页面管理】→【专题页】→【保养推荐页】→【自定义页面】。' },
+      { time: 7500, text: '步骤三：在页面编辑界面，将 Tab 切换至【保养推荐（扫码下单页）】。' },
+      { time: 9500, text: '步骤四：在左侧组件列表中，拖拽【商品模块】至中间的页面预览区域。' },
+    ],
+    render: () => `
+      <div class="slide slide-dark cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">PART 01</div>
+          <div class="cs-title">后台配置 — 步骤一：进入专题页配置</div>
+        </div>
+        <div class="cs-divider"></div>
+        <div class="cs-body">
+          <div class="steps-col">
+            ${[
+              ['1','登录南方商城后台','使用您的账号登录南方商城管理后台'],
+              ['2','进入页面管理','依次点击：页面管理 → 专题页 → 保养推荐页 → 自定义页面'],
+              ['3','选择扫码下单 Tab','在页面编辑界面，切换 Tab 至【保养推荐（扫码下单页）】'],
+              ['4','拖拽添加商品模块','在左侧组件列表中选中【商品模块】，拖拽至中间页面预览区域'],
+            ].map(([n, t, d], i) => `
+              <div class="step-card" data-delay="${i * 200}">
+                <div class="step-num">${n}</div>
+                <div class="step-content">
+                  <div class="step-title">${t}</div>
+                  <div class="step-desc">${d}</div>
+                </div>
+              </div>
+            `).join('')}
+            <div class="notice-box" id="slide-notice">
+              <span class="notice-icon">💡</span>
+              <span>进入自定义页面后，请确认页面类型为「保养推荐（扫码下单页）」，否则配置将不生效。</span>
+            </div>
+          </div>
+          <div class="screenshot-panel" id="screenshot-panel">
+            <div class="screenshot-frame">
+              <img src="${ASSETS}slide03_img00.png" alt="专题页面管理入口" onerror="this.style.display='none'">
+            </div>
+            <div class="screenshot-label">▲ 图示：专题页面管理入口</div>
+          </div>
+        </div>
+        <div class="watermark">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 4: 后台配置 步骤5 字段配置 ==========
+  {
+    id: 'backend-2',
+    chapter: '后台配置',
+    duration: 14000,
+    narrations: [
+      { time: 0, text: '步骤五：点击已添加的商品模块，进入编辑界面，完成详细配置。' },
+      { time: 3000, text: '【检测项】为可选字段。选择后，系统将自动读取大数据推荐的备件商品；不选则需手动关联。' },
+      { time: 5500, text: '【标题内容】为必填项，建议填写备件名称，例如"空气滤清器"。' },
+      { time: 7500, text: '【副标题】建议填写保养周期，例如"每1年或每2万公里建议保养"。' },
+      { time: 9500, text: '【关联商品】为必填项，请选择同类型商品进行关联。' },
+      { time: 11500, text: '所有字段配置完成后，点击【确认】保存本次配置。' },
+    ],
+    render: () => `
+      <div class="slide slide-light cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">PART 01</div>
+          <div class="cs-title">后台配置 — 步骤五：商品模块字段配置详解</div>
+        </div>
+        <div class="cs-divider"></div>
+        <div class="cs-body">
+          <div class="field-table">
+            ${[
+              ['检测项', '', '可选项。选择后，系统自动读取大数据推荐的备件商品；不选则需手动关联商品。'],
+              ['标题内容', '必填', '自定义模块标题，通常填写备件名称。例：该模块展示空气滤清器，则填写"空气滤清器"。'],
+              ['副标题', '', '建议填写更换或检修周期，例如"每1年 / 每2万公里建议保养"。'],
+              ['标题颜色', '', '默认为黑色，可根据页面整体风格自定义调整。'],
+              ['关联商品', '必填', '选择并关联同类型商品。例：模块主题为"轮胎"，则仅关联轮胎类商品。'],
+            ].map(([name, required, desc], i) => `
+              <div class="field-row" data-delay="${i * 150}">
+                <div class="field-name">
+                  ${name}
+                  ${required ? `<span class="field-required">★ ${required}</span>` : ''}
+                </div>
+                <div class="field-desc">${desc}</div>
+              </div>
+            `).join('')}
+            <div class="notice-box" id="slide-notice" style="margin-top:4px;">
+              <span class="notice-icon">💡</span>
+              <span>所有字段配置完成后，先点击【确认】保存当前配置，再点击【保存发布】同步更新小程序端展示内容。</span>
+            </div>
+          </div>
+          <div class="screenshot-panel" id="screenshot-panel">
+            <div class="screenshot-frame">
+              <img src="${ASSETS}slide04_img01.png" alt="商品模块配置界面" onerror="this.style.display='none'">
+            </div>
+            <div class="screenshot-label">▲ 图示：商品模块配置界面</div>
+          </div>
+        </div>
+        <div class="watermark" style="color:rgba(0,0,0,0.1);">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 5: 后台配置 步骤6 保存发布 ==========
+  {
+    id: 'backend-3',
+    chapter: '后台配置',
+    duration: 10000,
+    narrations: [
+      { time: 0, text: '步骤六：保存并发布。完成配置后，需要通过以下流程将内容同步至小程序端。' },
+      { time: 3000, text: '第一步，填写完所有配置项，点击【确认】，保存当前商品模块。' },
+      { time: 5000, text: '第二步，点击页面右上角的【保存发布】按钮，将配置内容同步至小程序端。' },
+      { time: 7500, text: '发布成功后，用户扫码进入小程序时，即可看到最新的商品模块内容。' },
+    ],
+    render: () => `
+      <div class="slide slide-dark cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">PART 01</div>
+          <div class="cs-title">后台配置 — 步骤六：保存并发布</div>
+        </div>
+        <div class="cs-divider"></div>
+        <div class="cs-body" style="flex-direction:column;gap:20px;">
+          <div class="flow-steps" style="flex:0 0 auto;padding-top:16px;">
+            ${[
+              ['⚙️','配置组件','填写标题、副标题\n关联商品等信息'],
+              ['arrow','→',''],
+              ['✅','点击确认','保存当前\n商品模块配置'],
+              ['arrow','→',''],
+              ['📤','保存发布','点击"保存发布"\n同步至小程序端'],
+              ['arrow','→',''],
+              ['📱','配置生效','小程序扫码下单\n页面实时更新'],
+            ].map(([ic, t, d], i) => ic === 'arrow' ? `
+              <div class="flow-arrow">${t}</div>
+            ` : `
+              <div class="flow-step" data-delay="${Math.floor(i/2) * 200}">
+                <div class="flow-step-icon">${ic}</div>
+                <div class="flow-step-title">${t}</div>
+                <div class="flow-step-desc">${d}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="display:flex;gap:20px;flex:1;overflow:hidden;">
+            <div class="screenshot-panel visible" style="width:auto;flex:1;transform:none;opacity:1;">
+              <div class="screenshot-frame">
+                <img src="${ASSETS}slide05_img02.png" alt="配置保存界面" style="object-fit:contain;" onerror="this.style.display='none'">
+              </div>
+              <div class="screenshot-label">▲ 图示：点击确认保存配置</div>
+            </div>
+            <div class="screenshot-panel visible" style="width:auto;flex:1;transform:none;opacity:1;">
+              <div class="screenshot-frame">
+                <img src="${ASSETS}slide05_img03.png" alt="发布后小程序页面" style="object-fit:contain;" onerror="this.style.display='none'">
+              </div>
+              <div class="screenshot-label">▲ 图示：发布后小程序页面效果</div>
+            </div>
+          </div>
+        </div>
+        <div class="watermark">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 6: 小程序首页 ==========
+  {
+    id: 'miniapp-home',
+    chapter: '小程序首页',
+    duration: 13000,
+    narrations: [
+      { time: 0, text: '第二部分：小程序首页说明。用户扫码进入后，页面分为三个主要区域。' },
+      { time: 3000, text: '顶部区域显示用户已绑定的车辆信息，包括车系、车型和车牌号。点击车牌可切换车辆。' },
+      { time: 6000, text: '左侧导航栏展示检测项列表，包括基础保养和大数据推荐的检测项。若建议检测，旁边会显示橙色"建议"角标。' },
+      { time: 9500, text: '右侧区域根据绑定车型自动过滤，仅展示适配该车型的商品，包含实时价格和库存信息。' },
+    ],
+    render: () => `
+      <div class="slide slide-light cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">PART 02</div>
+          <div class="cs-title">小程序首页 — 页面结构与功能说明</div>
+        </div>
+        <div class="cs-divider"></div>
+        <div class="cs-body">
+          <div class="info-grid">
+            <div class="info-row" data-delay="0" style="border-left:3px solid #0052CC;">
+              <div>
+                <span class="info-label">⬆ 顶部区域 — 车辆信息</span>
+                <span class="info-text">显示当前用户绑定的车系、车型和车牌号；点击车牌号可切换至其他已绑定车辆。</span>
+              </div>
+            </div>
+            <div class="info-row" data-delay="150" style="border-left:3px solid #0066FF;">
+              <div>
+                <span class="info-label">◀ 左侧导航栏 — 检测项列表</span>
+                <span class="info-text">
+                  • 【基础保养】固定显示，来源于用户已购买的厂家或集团基础保养套餐<br>
+                  • 检测项来源：后台手动配置 + 大数据智能推荐<br>
+                  • 若该检测项建议检测或更换，商品名称旁显示橙色【建议】角标
+                </span>
+              </div>
+            </div>
+            <div class="info-row" data-delay="300" style="border-left:3px solid #4A90FF;">
+              <div>
+                <span class="info-label">▶ 右侧区域 — 商品列表</span>
+                <span class="info-text">
+                  • 根据用户当前绑定车型自动过滤，仅展示适配该车型的商品<br>
+                  • 基础保养：显示已购套餐中包含的备件、工时及优惠折扣和数量<br>
+                  • 小保养（如4L机油）：默认展开，主商品为套餐价格，子商品为可选项<br>
+                  • 规格默认显示该车型最低售价规格，价格和工时均为当前门店实时数据
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="screenshot-panel" id="screenshot-panel">
+            <div class="screenshot-frame" style="flex:1;">
+              <img src="${ASSETS}slide06_img04.png" alt="小程序首页" onerror="this.style.display='none'">
+            </div>
+            <div class="screenshot-label">▲ 图示：小程序首页界面</div>
+          </div>
+        </div>
+        <div class="watermark" style="color:rgba(0,0,0,0.1);">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 7: 商品操作 ==========
+  {
+    id: 'goods-ops',
+    chapter: '商品操作',
+    duration: 14000,
+    narrations: [
+      { time: 0, text: '第三部分：商品操作，包括切换车辆、更换商品和切换规格三项操作。' },
+      { time: 3000, text: '切换车辆：点击顶部车牌号，跳转至车型列表后选择目标车型，页面商品将自动更新。' },
+      { time: 6000, text: '更换商品：点击检测项右侧的【更换】按钮，在商品列表中选择新商品并确认。' },
+      { time: 9000, text: '切换规格：点击商品规格，弹出可用规格列表。注意：库存不足的规格会显示"已售罄"标识，但仍可选择。' },
+      { time: 12000, text: '以上三项操作均在首页完成，操作后页面商品信息实时同步。' },
+    ],
+    render: () => `
+      <div class="slide slide-dark cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">PART 03</div>
+          <div class="cs-title">商品操作 — 切换车辆 · 更换商品 · 切换规格</div>
+        </div>
+        <div class="cs-divider"></div>
+        <div class="cs-body" style="padding-top:16px;">
+          <div class="cols-3">
+            <div class="col-block" data-delay="0">
+              <span class="col-icon">🚗</span>
+              <div class="col-title">切换车辆</div>
+              ${['点击顶部车牌号或车辆信息区域','跳转至"我的车型列表"页面','选择目标车型后，自动返回首页','商品列表同步更新为所选车型的适配商品'].map((t,i)=>`
+                <div class="col-item">
+                  <span style="color:var(--primary-light);font-weight:600;flex-shrink:0;">${i+1}.</span>
+                  <span>${t}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="col-block" data-delay="150">
+              <span class="col-icon">🔄</span>
+              <div class="col-title">更换商品</div>
+              ${['点击某检测项右侧的【更换】按钮','进入该检测项的商品列表页','选择想要更换的商品，点击【确认】','返回首页，商品已更新至新选择'].map((t,i)=>`
+                <div class="col-item">
+                  <span style="color:var(--primary-light);font-weight:600;flex-shrink:0;">${i+1}.</span>
+                  <span>${t}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="col-block" data-delay="300">
+              <span class="col-icon">📦</span>
+              <div class="col-title">切换规格</div>
+              ${['点击首页商品的规格区域','弹出该商品所有可用规格列表','库存不足的规格显示【已售罄】标识（仍可选）','选中规格后点击【确认】返回首页'].map((t,i)=>`
+                <div class="col-item">
+                  <span style="color:var(--primary-light);font-weight:600;flex-shrink:0;">${i+1}.</span>
+                  <span>${t}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="watermark">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 8: 购物车 ==========
+  {
+    id: 'cart',
+    chapter: '购物车',
+    duration: 13000,
+    narrations: [
+      { time: 0, text: '第四部分：购物车操作。' },
+      { time: 2000, text: '关于商品数量规则：基础保养的主商品为必选项，数量不可为0；子商品为可选项，数量可设为0。' },
+      { time: 5500, text: '购物车角标数量等于已选商品数量的合计，预估金额为所有已选商品售价之和。' },
+      { time: 8000, text: '删除商品时请注意：删除基础保养的主商品，会同时删除该保养下的所有子商品；删除子商品则仅影响该子商品本身。' },
+      { time: 11500, text: '预估金额将随购物车变化实时更新。' },
+    ],
+    render: () => `
+      <div class="slide slide-light cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">PART 04</div>
+          <div class="cs-title">购物车操作 — 选择商品 · 管理购物车 · 预估金额</div>
+        </div>
+        <div class="cs-divider"></div>
+        <div class="cs-body">
+          <div style="display:flex;flex-direction:column;gap:12px;flex:1;">
+            <div class="col-block" data-delay="0" style="flex:0 0 auto;padding:14px 16px;">
+              <div class="col-title" style="margin-bottom:8px;">📊 商品数量规则</div>
+              <div style="display:flex;gap:20px;">
+                ${[
+                  ['必选项','基础保养 · 主商品（如4L机油）','数量不可为0，为必选项'],
+                  ['可选项','基础保养 · 子商品（如1L机油、机油滤清器）','数量可设为0'],
+                  ['必选项','其他检测项（如轮胎、空气滤清器）','数量不可为0，为必选项'],
+                ].map(([badge, name, desc]) => `
+                  <div style="flex:1;padding:10px;background:rgba(0,82,204,0.05);border-radius:6px;border:1px solid rgba(0,82,204,0.1);">
+                    <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:${badge==='必选项'?'rgba(255,86,48,0.1)':'rgba(0,135,90,0.1)'};color:${badge==='必选项'?'#E84235':'#00875A'};font-weight:600;">${badge}</span>
+                    <div style="font-size:12px;color:#0A1628;font-weight:600;margin:5px 0 3px;">${name}</div>
+                    <div style="font-size:11px;color:#718096;">${desc}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;flex:1;">
+              <div class="col-block" data-delay="150" style="flex:1;">
+                <div class="col-title">🛒 购物车功能</div>
+                ${[
+                  '购物车角标数量 = 已选商品数量合计',
+                  '预估金额 = 所有已选商品的售价总和',
+                  '点击【购物车】按钮，弹出已选商品列表',
+                  '点击【清空已选商品】，购物车全部清空，首页勾选状态同步取消',
+                  '在购物车列表中向左滑动商品，显示【删除】按钮',
+                ].map(t=>`<div class="col-item">${t}</div>`).join('')}
+              </div>
+              <div class="col-block" data-delay="300" style="flex:1;">
+                <div class="col-title">🗑 删除商品逻辑</div>
+                ${[
+                  ['删除基础保养 主商品','同时删除该保养下的所有子商品','warn'],
+                  ['删除基础保养 子商品','仅删除该子商品，不影响主商品及其他子商品','ok'],
+                  ['删除检测项商品','仅删除该检测项商品','ok'],
+                  ['任意删除操作','预估金额实时同步更新',''],
+                ].map(([a, b, type]) => `
+                  <div class="col-item">
+                    <span style="color:${type==='warn'?'#FF5630':type==='ok'?'#00875A':'var(--primary-light)'};font-weight:600;">${a}</span>
+                    <span style="color:#718096;margin-left:4px;">→ ${b}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+          <div class="screenshot-panel" id="screenshot-panel">
+            <div class="screenshot-frame">
+              <img src="${ASSETS}slide08_img08.png" alt="购物车界面" onerror="this.style.display='none'">
+            </div>
+            <div class="screenshot-label">▲ 图示：购物车界面</div>
+          </div>
+        </div>
+        <div class="watermark" style="color:rgba(0,0,0,0.1);">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 9: 提交订单 — 订单确认页 ==========
+  {
+    id: 'order-confirm',
+    chapter: '提交订单',
+    duration: 14000,
+    narrations: [
+      { time: 0, text: '第五部分：提交订单。选好商品后，点击【提交】进入订单确认页。' },
+      { time: 3000, text: '报修人姓名默认显示已绑定用户的姓名，可点击修改。' },
+      { time: 5000, text: '服务顾问：点击该行，从弹出的顾问列表中选择并确认。' },
+      { time: 7000, text: '订单商品信息显示每件商品的名称、规格、单价、数量及工时费。注意：工时费不随商品数量增加而叠加。' },
+      { time: 10000, text: '商品总价为预估价，实际金额以B端服务顾问确认为准。' },
+      { time: 12000, text: '积分及卡余额在此页面仅供展示，不参与直接抵扣。' },
+    ],
+    render: () => `
+      <div class="slide slide-dark cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">PART 05</div>
+          <div class="cs-title">提交订单 — 订单确认页信息说明</div>
+        </div>
+        <div class="cs-divider"></div>
+        <div class="cs-body">
+          <div class="order-table">
+            ${[
+              ['报修人姓名', '默认显示已绑定用户的姓名，可点击该行进行修改。'],
+              ['服务顾问', '点击该行，从弹出的顾问列表中选择对应人员，点击【确认】返回。'],
+              ['订单商品信息', '展示每件商品的名称、规格、单价、数量及工时费（如有）。注意：工时费不随商品数量增加而叠加。'],
+              ['最佳优惠 / 卡券', '若商品关联了可用优惠卡券，此处展示。点击可查看可用及不可用优惠列表。'],
+              ['商品总价', '所有备件价格 + 工时费 - 可用优惠券金额。此为预估价，实际以B端服务顾问确认为准。'],
+              ['积分 / 卡金额', '展示与B端数据一致的积分及卡余额信息，本页面不支持直接抵扣。'],
+              ['预估金额', '与购物车中显示的预估金额保持一致。'],
+            ].map(([k, v], i) => `
+              <div class="order-row" data-delay="${i * 100}">
+                <div class="order-key">${k}</div>
+                <div class="order-val">${v}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="screenshot-panel" id="screenshot-panel">
+            <div class="screenshot-frame">
+              <img src="${ASSETS}slide09_img09.png" alt="订单确认页" onerror="this.style.display='none'">
+            </div>
+            <div class="screenshot-label">▲ 图示：订单确认页界面</div>
+          </div>
+        </div>
+        <div class="watermark">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 10: 提交流程三步校验 ==========
+  {
+    id: 'order-submit',
+    chapter: '提交订单',
+    duration: 16000,
+    narrations: [
+      { time: 0, text: '核对完订单信息后，点击【去提交】，系统将依次完成三个步骤的校验。' },
+      { time: 3000, text: '第一步：报修人确认。若未修改过报修人，系统弹出提示；选择【忽略】可直接进入下一步，选择【去修改】可先完善信息再提交。' },
+      { time: 7000, text: '第二步：库存校验。库存充足则自动通过；若存在库存不足，系统提示具体缺货商品，可选择返回重选或忽略缺货直接下单。' },
+      { time: 11000, text: '第三步：到店服务选择。默认全部选择"是"，根据实际情况确认后，点击【确认】提交订单至B端。' },
+      { time: 14500, text: '订单提交成功后，将同步发送至B端南方新营销平台的售后服务PAD端。' },
+    ],
+    render: () => `
+      <div class="slide slide-light cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">PART 05</div>
+          <div class="cs-title">提交流程 — 三步校验说明</div>
+        </div>
+        <div class="cs-divider"></div>
+        <div class="cs-body" style="gap:16px;padding-top:16px;">
+          <div class="branches-layout">
+            ${[
+              {
+                title: 'STEP 1 · 报修人确认',
+                cards: [
+                  { label: '情况1：未修改报修人', text: '系统弹出确认提示弹窗<br><span class="opt">选择【忽略】</span> → 进入库存校验<br><span class="opt">选择【去修改】</span> → 修改后点击【确认】→ 进入库存校验' },
+                  { label: '情况2：已修改报修人', text: '无需额外确认，直接自动进入库存校验步骤。' },
+                ],
+              },
+              {
+                title: 'STEP 2 · 库存校验',
+                cards: [
+                  { label: '情况1：库存充足', text: '自动通过校验，直接进入"到店服务选择"步骤。' },
+                  { label: '情况2：存在库存不足', text: '弹窗提示具体缺货商品<br><span class="opt opt-warn">选择【重新选择】</span> → 返回首页重选<br><span class="opt">选择【继续下单】</span> → 忽略缺货，进入到店服务选择' },
+                ],
+              },
+              {
+                title: 'STEP 3 · 到店服务选择',
+                cards: [
+                  { label: '默认状态', text: '所有到店服务选项默认选择"是"，可根据实际情况修改。' },
+                  { label: '提交', text: '确认无误后，点击【确认】按钮，订单成功提交至B端系统。' },
+                ],
+              },
+            ].map((col, ci) => `
+              <div class="branch-col">
+                <div class="branch-title">${col.title}</div>
+                ${col.cards.map((card, i) => `
+                  <div class="branch-card" data-delay="${ci * 100 + i * 150}">
+                    <div class="branch-label">${card.label}</div>
+                    <div class="branch-result">${card.text}</div>
+                  </div>
+                `).join('')}
+              </div>
+            `).join('')}
+          </div>
+          <div class="notice-box visible" style="flex-shrink:0;opacity:0;transition:opacity 0.5s 1.8s;" id="slide-notice">
+            <span class="notice-icon">💡</span>
+            <span>提交成功后，订单将同步发送至B端（南方新营销平台 · 售后服务PAD端）。</span>
+          </div>
+        </div>
+        <div class="watermark" style="color:rgba(0,0,0,0.1);">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 11: QR下载 ==========
+  {
+    id: 'qr-download',
+    chapter: 'QR配置',
+    duration: 11000,
+    narrations: [
+      { time: 0, text: '在正式开始使用扫码下单功能之前，服务经理需要先获取门店专属二维码并张贴至门店。' },
+      { time: 3500, text: '登录南方新营销平台后，按路径：门店基础配置 → 专营店组织信息管理 → 专营店二维码下单，进入下载页面。' },
+      { time: 7000, text: '点击【下载二维码】，打印后张贴至前台、等候区等显眼位置，引导客户自助扫码下单。' },
+      { time: 9500, text: '建议打印为A4尺寸，以便客户清晰扫描。' },
+    ],
+    render: () => `
+      <div class="slide slide-dark cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">PART 06</div>
+          <div class="cs-title">获取并张贴门店二维码</div>
+        </div>
+        <div class="cs-divider"></div>
+        <div class="qr-slide-body">
+          <div class="qr-steps">
+            ${[
+              ['1','登录新营销平台','服务经理使用账号登录【南方新营销平台】'],
+              ['2','进入二维码下载页','菜单路径：门店基础配置 → 专营店组织信息管理 → 专营店二维码下单'],
+              ['3','下载并打印二维码','点击【下载二维码】按钮，下载后打印，张贴至门店明显位置'],
+              ['4','引导客户扫码下单','客户到店后，由服务顾问引导客户扫描二维码，进入扫码下单页面'],
+            ].map(([n, t, d], i) => `
+              <div class="step-card" data-delay="${i * 180}">
+                <div class="step-num">${n}</div>
+                <div class="step-content">
+                  <div class="step-title">${t}</div>
+                  <div class="step-desc">${d}</div>
+                </div>
+              </div>
+            `).join('')}
+            <div class="qr-path-bar" id="slide-notice" style="opacity:0;transition:opacity 0.5s 1.2s;">
+              <span>📍</span>
+              <span>门店基础配置</span>
+              <span class="qr-path-sep">›</span>
+              <span>专营店组织信息管理</span>
+              <span class="qr-path-sep">›</span>
+              <span>专营店二维码下单</span>
+            </div>
+            <div class="notice-box warn" id="slide-notice2" style="opacity:0;transition:opacity 0.5s 1.6s;">
+              <span class="notice-icon">💡</span>
+              <span>建议将二维码打印为 A4 尺寸，张贴在客户等候区、前台接待处等明显位置，方便客户自助扫码。</span>
+            </div>
+          </div>
+          <div class="screenshot-panel" id="screenshot-panel">
+            <div class="screenshot-frame">
+              <img src="${ASSETS}slide11_img12.png" alt="二维码下载界面" onerror="this.style.display='none'">
+            </div>
+            <div class="screenshot-label">▲ 图示：专营店二维码下载界面</div>
+          </div>
+        </div>
+        <div class="watermark">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 12: B端接单 ==========
+  {
+    id: 'backend-order',
+    chapter: 'B端接单',
+    duration: 10000,
+    narrations: [
+      { time: 0, text: '第六部分：B端工单接单。客户扫码下单成功后，服务顾问需在B端系统处理订单。' },
+      { time: 3500, text: '操作路径为：打开南方新营销平台，进入售后服务PAD端，找到【作业工单】模块。' },
+      { time: 6500, text: '在【接待】或【全部】选项卡中，即可查看并处理客户提交的扫码下单工单。' },
+      { time: 9000, text: '请及时处理工单，确保客户订单得到跟进。' },
+    ],
+    render: () => `
+      <div class="slide slide-dark cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">PART 06</div>
+          <div class="cs-title">B端工单接单 — 服务顾问 PAD 端操作</div>
+        </div>
+        <div class="cs-divider"></div>
+        <div class="cs-body" style="flex-direction:column;gap:20px;padding-top:20px;">
+          <div style="display:flex;align-items:center;gap:12px;flex:0 0 auto;">
+            ${[
+              ['南方新营销平台','🌐'],
+              ['›',''],
+              ['售后服务 PAD 端','📱'],
+              ['›',''],
+              ['作业工单','📋'],
+              ['›',''],
+              ['接待 / 全部','✅'],
+            ].map(([t, ic], i) => t === '›' ? `
+              <div style="font-size:20px;color:rgba(0,82,204,0.5);">›</div>
+            ` : `
+              <div class="col-block visible" data-delay="${i * 100}" style="flex:1;padding:16px;text-align:center;transform:none;opacity:0;transition:all 0.5s ${i*100}ms;">
+                <div style="font-size:24px;margin-bottom:8px;">${ic}</div>
+                <div style="font-size:13px;font-weight:600;color:var(--text-main);">${t}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="flex:1;display:flex;gap:20px;overflow:hidden;">
+            <div class="screenshot-panel visible" style="flex:1;width:auto;transform:none;opacity:0;transition:all 0.6s 0.4s;" id="screenshot-panel">
+              <div class="screenshot-frame">
+                <img src="${ASSETS}slide12_img13.png" alt="B端工单接单界面" onerror="this.style.display='none'">
+              </div>
+              <div class="screenshot-label">▲ 图示：B端工单接单界面（售后服务PAD端）</div>
+            </div>
+          </div>
+        </div>
+        <div class="watermark">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+
+  // ========== SLIDE 13: 总结 ==========
+  {
+    id: 'summary',
+    chapter: '流程总结',
+    duration: 10000,
+    narrations: [
+      { time: 0, text: '最后，让我们回顾扫码下单的完整操作流程。' },
+      { time: 2000, text: '一：后台配置 → 二：小程序操作 → 三：加入购物车 → 四：提交订单 → 五：B端接单。' },
+      { time: 5500, text: '掌握以上五个步骤，即可完整完成扫码下单的全链路操作。' },
+      { time: 8000, text: '如有操作疑问，请联系技术支持团队。感谢观看！' },
+    ],
+    render: () => `
+      <div class="slide summary-slide cs-layout" style="position:absolute;inset:0;">
+        <div class="cs-header">
+          <div class="cs-part-badge">SUMMARY</div>
+          <div class="cs-title">操作流程总结</div>
+        </div>
+        <div class="cs-divider" style="background:linear-gradient(90deg,rgba(0,82,204,0.6),rgba(0,82,204,0.1),transparent);"></div>
+        <div class="cs-body" style="padding-top:24px;">
+          <div class="summary-flow">
+            ${[
+              ['🏢', '后台配置', '配置检测项、关联商品\n保存发布，小程序同步生效'],
+              ['📱', '小程序操作', '扫码进入，查看车型商品\n按需切换车辆/商品/规格'],
+              ['🛒', '加入购物车', '勾选商品，确认数量\n查看预估金额'],
+              ['📋', '提交订单', '核对信息，三步校验\n确认到店服务后提交'],
+              ['🖥️', 'B端接单', '服务顾问在PAD端\n作业工单中处理订单'],
+            ].map(([ic, t, d], i) => i < 4 ? `
+              <div class="summary-item" data-delay="${i * 200}">
+                <div class="summary-circle">
+                  ${ic}
+                  <div class="summary-circle-num">${i+1}</div>
+                </div>
+                <div class="summary-label">${t}</div>
+                <div class="summary-desc">${d}</div>
+              </div>
+              <div class="summary-arrow">→</div>
+            ` : `
+              <div class="summary-item" data-delay="${i * 200}">
+                <div class="summary-circle">
+                  ${ic}
+                  <div class="summary-circle-num">${i+1}</div>
+                </div>
+                <div class="summary-label">${t}</div>
+                <div class="summary-desc">${d}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="summary-footer" id="summary-footer">
+          如有操作疑问，请联系技术支持团队
+        </div>
+        <div class="watermark">南方商城 · 内部操作手册</div>
+      </div>
+    `
+  },
+];
+
+// ============================================================
+// PLAYER ENGINE
+// ============================================================
+let currentSlide = 0;
+let isPlaying = false;
+let playTimer = null;
+let narrationTimer = null;
+let slideStartTime = 0;
+let elapsedBeforePause = 0;
+let totalDuration = slides.reduce((s, sl) => s + sl.duration, 0);
+
+const stage = document.getElementById('stage');
+const subtitleEl = document.getElementById('subtitle');
+const progressFill = document.getElementById('progress-fill');
+const timeDisplay = document.getElementById('time-display');
+const slideCounter = document.getElementById('slide-counter');
+const btnPlay = document.getElementById('btn-play');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  return `${String(m).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
+}
+
+function renderSlide(idx) {
+  stage.innerHTML = slides[idx].render();
+  // Animate in
+  const el = stage.querySelector('.slide');
+  if (el) { el.classList.add('active', 'slide-enter'); }
+
+  // Staggered card animations
+  setTimeout(() => {
+    document.querySelectorAll('[data-delay]').forEach(el => {
+      const delay = parseInt(el.dataset.delay) || 0;
+      setTimeout(() => {
+        el.classList.add('visible');
+        // Also handle screenshot panel
+        const sp = document.getElementById('screenshot-panel');
+        if (sp) sp.classList.add('visible');
+        const notice = document.getElementById('slide-notice');
+        if (notice) notice.classList.add('visible');
+        const notice2 = document.getElementById('slide-notice2');
+        if (notice2) notice2.classList.add('visible');
+        const sf = document.getElementById('summary-footer');
+        if (sf) sf.classList.add('visible');
+      }, delay + 300);
+    });
+    // screenshot panel
+    const sp = document.getElementById('screenshot-panel');
+    if (sp) setTimeout(() => sp.classList.add('visible'), 400);
+    const notice = document.getElementById('slide-notice');
+    if (notice) setTimeout(() => notice.classList.add('visible'), 1200);
+    const notice2 = document.getElementById('slide-notice2');
+    if (notice2) setTimeout(() => notice2.classList.add('visible'), 1600);
+    const sf = document.getElementById('summary-footer');
+    if (sf) setTimeout(() => sf.classList.add('visible'), 2000);
+  }, 100);
+
+  slideCounter.textContent = `${idx + 1} / ${slides.length}`;
+  updateChapterPills(idx);
+}
+
+function showSubtitle(text) {
+  subtitleEl.classList.remove('visible');
+  setTimeout(() => {
+    subtitleEl.textContent = text;
+    subtitleEl.classList.add('visible');
+  }, 200);
+}
+
+function clearSubtitle() {
+  subtitleEl.classList.remove('visible');
+  setTimeout(() => { subtitleEl.textContent = ''; }, 400);
+}
+
+function scheduleNarrations(slide, startOffset = 0) {
+  clearNarrationTimers();
+  slide.narrations.forEach(n => {
+    if (n.time >= startOffset) {
+      const t = setTimeout(() => {
+        showSubtitle(n.text);
+      }, n.time - startOffset);
+      narrationTimers.push(t);
+    }
+  });
+}
+
+let narrationTimers = [];
+function clearNarrationTimers() {
+  narrationTimers.forEach(clearTimeout);
+  narrationTimers = [];
+}
+
+function goToSlide(idx, autoPlay = true) {
+  currentSlide = Math.max(0, Math.min(idx, slides.length - 1));
+  elapsedBeforePause = 0;
+  clearNarrationTimers();
+  if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+  clearSubtitle();
+  renderSlide(currentSlide);
+  updateProgress();
+  if (autoPlay && isPlaying) {
+    startSlideTimer();
+  }
+}
+
+function startSlideTimer() {
+  slideStartTime = Date.now() - elapsedBeforePause;
+  scheduleNarrations(slides[currentSlide], elapsedBeforePause);
+  const remaining = slides[currentSlide].duration - elapsedBeforePause;
+  playTimer = setTimeout(() => {
+    if (currentSlide < slides.length - 1) {
+      elapsedBeforePause = 0;
+      currentSlide++;
+      renderSlide(currentSlide);
+      startSlideTimer();
+    } else {
+      isPlaying = false;
+      btnPlay.innerHTML = '&#9654;';
+      clearSubtitle();
+    }
+  }, remaining);
+}
+
+function togglePlay() {
+  if (isPlaying) {
+    // Pause
+    isPlaying = false;
+    btnPlay.innerHTML = '&#9654;';
+    if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+    clearNarrationTimers();
+    elapsedBeforePause = Date.now() - slideStartTime;
+  } else {
+    // Play
+    isPlaying = true;
+    btnPlay.innerHTML = '&#9646;&#9646;';
+    if (currentSlide >= slides.length - 1 && elapsedBeforePause >= slides[currentSlide].duration) {
+      goToSlide(0, false);
+    }
+    startSlideTimer();
+  }
+}
+
+function updateProgress() {
+  // Calculate total elapsed
+  let totalElapsed = 0;
+  for (let i = 0; i < currentSlide; i++) totalElapsed += slides[i].duration;
+  totalElapsed += elapsedBeforePause;
+  const pct = (totalElapsed / totalDuration) * 100;
+  progressFill.style.width = pct + '%';
+  timeDisplay.textContent = `${formatTime(totalElapsed)} / ${formatTime(totalDuration)}`;
+}
+
+// Progress tick
+setInterval(() => {
+  if (isPlaying && playTimer) {
+    const currentElapsed = Date.now() - slideStartTime;
+    elapsedBeforePause = currentElapsed;
+    updateProgress();
+  }
+}, 250);
+
+// Build chapter pills and marks
+const chapterList = document.getElementById('chapter-list');
+const chapterMarks = document.getElementById('chapter-marks');
+slides.forEach((slide, i) => {
+  const pill = document.createElement('div');
+  pill.className = 'chapter-pill';
+  pill.textContent = slide.chapter;
+  pill.dataset.index = i;
+  pill.addEventListener('click', () => goToSlide(i));
+  chapterList.appendChild(pill);
+
+  let offset = 0;
+  for (let j = 0; j < i; j++) offset += slides[j].duration;
+  const pct = (offset / totalDuration) * 100;
+  if (pct > 0 && pct < 100) {
+    const mark = document.createElement('div');
+    mark.className = 'chapter-mark';
+    mark.style.left = pct + '%';
+    chapterMarks.appendChild(mark);
+  }
+});
+
+function updateChapterPills(idx) {
+  document.querySelectorAll('.chapter-pill').forEach((p, i) => {
+    p.classList.toggle('active', i === idx);
+  });
+}
+
+// Progress bar click
+document.getElementById('progress-wrap').addEventListener('click', (e) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  const targetTime = pct * totalDuration;
+  let acc = 0;
+  for (let i = 0; i < slides.length; i++) {
+    if (acc + slides[i].duration > targetTime) {
+      currentSlide = i;
+      elapsedBeforePause = targetTime - acc;
+      renderSlide(currentSlide);
+      updateProgress();
+      if (isPlaying) startSlideTimer();
+      break;
+    }
+    acc += slides[i].duration;
+  }
+});
+
+btnPlay.addEventListener('click', togglePlay);
+btnPrev.addEventListener('click', () => {
+  if (currentSlide > 0) goToSlide(currentSlide - 1);
+});
+btnNext.addEventListener('click', () => {
+  if (currentSlide < slides.length - 1) goToSlide(currentSlide + 1);
+});
+
+// Keyboard controls
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    if (currentSlide < slides.length - 1) goToSlide(currentSlide + 1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    if (currentSlide > 0) goToSlide(currentSlide - 1);
+  } else if (e.key === ' ') {
+    e.preventDefault();
+    togglePlay();
+  }
+});
+
+// Init
+renderSlide(0);
+updateProgress();
+updateChapterPills(0);
+</script>
+</body>
+</html>
